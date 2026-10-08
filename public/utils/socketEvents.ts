@@ -1,6 +1,6 @@
-export const AGENT_EVENT = "agent:event";
-export const AGENT_HEARTBEAT = "agent:heartbeat";
-export const AGENT_SPECTROGRAM = "agent:spectrogram";
+export const LISTENER_EVENT = "listener:event";
+export const LISTENER_HEARTBEAT = "listener:heartbeat";
+export const LISTENER_SPECTROGRAM = "listener:spectrogram";
 
 export const LIVE_WATCH = "live:watch";
 export const LIVE_UNWATCH = "live:unwatch";
