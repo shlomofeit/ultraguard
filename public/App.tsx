@@ -1,10 +1,7 @@
+import AppRoutes from "./routes/AppRoutes";
+
 const App = () => {
-  return (
-    <main>
-      <h1>UltraGuard</h1>
-      <p>שומר אולטרסוני</p>
-    </main>
-  );
+  return <AppRoutes />;
 };
 
 export default App;
