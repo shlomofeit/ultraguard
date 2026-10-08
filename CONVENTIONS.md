@@ -35,8 +35,8 @@ public/                 # פרונט, React + TypeScript, שורש של Vite
   listener/             # המאזין: קליטה, עיבוד אותות, גילוי, סיווג, שליחה. בלי React
   utils/                # פונקציות עזר טהורות
   styles/
-src/                    # בק, Node.js + Express
-  routes/  middleware/  ctrls/  services/  repo/
+src/                    # בק, Node.js + Express. המבנה המלא ב-BACKEND.md
+  routes/  sockets/  services/  repositories/  utils/  db/
   sockets/              # הודעות socket.io, מקביל ל-routes + ctrls
   utils/                # סכמות zod, טיפול שגיאות, JWT
   db/                   # חיבור ל-Supabase ול-MongoDB
@@ -105,36 +105,15 @@ tests/                  # unit/ (Vitest), e2e/ (Playwright)
 - לא מניחים קצב דגימה. תמיד משתמשים ב-`audioContext.sampleRate` (במחשבים שבדקנו הוא 44,100 ולא 48,000).
 - המאזין שולח לשרת רק אירועים ומספרים, אף פעם לא אודיו.
 
-## Backend: מבנה וזרימה
+## Backend
 
-HTTP: `route` ← `middleware` ← `ctrl` ← `service` ← `repo`
-socket: `sockets` ← `service` ← `repo`
+כל הקוד ב-`src/` נכתב לפי `BACKEND.md`, בסגנון של אבי. המסמך הזה (`CONVENTIONS.md`) חל על `public/` ועל `tests/` של הפרונט והמאזין.
 
-| שכבה | אחריות |
-| --- | --- |
-| `routes/` | מיפוי נתיב לפונקציה, והצמדת middleware |
-| `middleware/` | אימות טוקן ובדיקת תפקיד |
-| `ctrls/` | קורא מ-`req`, קורא ל-service, מחזיר תשובה |
-| `sockets/` | מקבל הודעה, קורא ל-service, מחזיר אישור קבלה |
-| `services/` | ולידציה ולוגיקה עסקית, וקריאה ל-repo |
-| `repo/` | גישה למסד בלבד |
-| `utils/` | סכמות zod, טיפול שגיאות, JWT |
-| `db/` | חיבור למסד |
-
-## Backend: כללים
-
-- ESM (`import`/`export`), וכל import מקומי עם סיומת `.js`.
-- שם קובץ לפי תחום ושכבה: `events.route.js`, `events.ctrl.js`, `events.service.js`, `events.repo.js`, `listener.socket.js`.
-- ולידציה עם zod ו-`safeParse`, והודעת שגיאה מפורשת לכל שדה.
-- שגיאה נזרקת עם `throw errorCreator(status, message)`, ו-`errorHandler` מרכזי אחד מחזיר את התשובה. בלי `try/catch` בכל controller.
-- תשובה במבנה קבוע: `{ success: true, data }` או `{ success: false, message }`.
-- ה-repo ממיר `_id` ל-`id` לפני שהוא מחזיר, כך שהלקוח לא רואה `_id`.
-- סודות והגדרות ב-`.env` דרך `dotenv`, ולא בקוד. `.env.example` מתעדכן בכל משתנה חדש.
-- `deviceId` ו-`roomId` של אירוע נלקחים מהחיבור המאומת, אף פעם לא מגוף ההודעה.
+כשמבקשים מכלי AI לכתוב קוד שרת, מצרפים את `BACKEND.md` ולא את המסמך הזה.
 
 ## החוזה בין המאזין לשרת
 
-- `public/types/event.ts` ו-`src/utils/schemas.js` מתארים את אותן הודעות. שינוי באחד מחייב שינוי בשני באותו commit.
+- `public/types/event.ts` ו-`src/utils/validation.js` מתארים את אותן הודעות. שינוי באחד מחייב שינוי בשני באותו commit, ושני השותפים מאשרים.
 - שמות אירועי socket נמצאים רק ב-`socketEvents.ts` וב-`socketEvents.js`, זהים בשניהם. לא כותבים שם של אירוע כמחרוזת בקוד.
 - `listener:` מהמאזין לשרת, `live:` מהשרת לצופים.
 
