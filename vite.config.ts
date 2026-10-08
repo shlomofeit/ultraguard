@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 const SERVER_URL = "http://localhost:3000";
@@ -16,5 +16,9 @@ export default defineConfig({
       "/api": SERVER_URL,
       "/socket.io": { target: SERVER_URL, ws: true },
     },
+  },
+  test: {
+    root: ".",
+    include: ["tests/**/*.test.ts"],
   },
 });
