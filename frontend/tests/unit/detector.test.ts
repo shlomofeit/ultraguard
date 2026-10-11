@@ -5,18 +5,18 @@ import {
   pushFrame,
   spectralEntropy,
   type Detection,
-} from "../../public/listener/detector";
+} from "../../src/listener/detector";
 import {
   FRAME_SIZE,
   createNoiseFloor,
   goertzelBank,
   makeFreqGrid,
   updateNoiseFloor,
-} from "../../public/listener/dsp";
+} from "../../src/listener/dsp";
 import {
   generateBeacon,
   renderSegments,
-} from "../../public/listener/beaconGenerator";
+} from "../../src/listener/beaconGenerator";
 
 const SAMPLE_RATE = 48000;
 const NOISE_LEVEL = 0.001;

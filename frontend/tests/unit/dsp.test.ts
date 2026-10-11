@@ -7,9 +7,9 @@ import {
   makeFreqGrid,
   median,
   updateNoiseFloor,
-} from "../../public/listener/dsp";
-import { generateBeacon } from "../../public/listener/beaconGenerator";
-import { LISNR } from "../../public/listener/beacons";
+} from "../../src/listener/dsp";
+import { generateBeacon } from "../../src/listener/beaconGenerator";
+import { LISNR } from "../../src/listener/beacons";
 
 const SAMPLE_RATE = 48000;
 
