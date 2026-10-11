@@ -22,6 +22,7 @@ const EventsTable = ({ events }: EventsTableProps) => {
           <th>תדר שיא</th>
           <th>משך</th>
           <th>SNR</th>
+          <th>תוכן</th>
         </tr>
       </thead>
       <tbody>
@@ -33,6 +34,7 @@ const EventsTable = ({ events }: EventsTableProps) => {
             <td dir="ltr">{event.peakFreqHz} Hz</td>
             <td dir="ltr">{event.durationMs} ms</td>
             <td dir="ltr">{event.snrDb.toFixed(0)} dB</td>
+            <td dir="auto">{event.payload ?? "–"}</td>
           </tr>
         ))}
       </tbody>

@@ -1,10 +1,13 @@
 import { create } from "zustand";
 import { io } from "socket.io-client";
-import type { Detection } from "../listener/detector";
 import { startCapture, type Capture } from "../listener/capture";
-import { createPipeline, toEventInput } from "../listener/pipeline";
 import { createSender, type Sender } from "../listener/sender";
 import { getErrorDetails } from "../utils/getErrorDetails";
+import {
+  createPipeline,
+  toEventInput,
+  type PipelineDetection,
+} from "../listener/pipeline";
 
 const LISTENER_URL = `${import.meta.env.VITE_API_URL}/listener`;
 
@@ -16,7 +19,7 @@ interface ListenerStore {
   error: string | null;
   sampleRate: number | null;
   startedAtMs: number | null;
-  detections: Detection[];
+  detections: PipelineDetection[];
   isConnected: boolean;
   queueSize: number;
   setStartListening: () => void;
