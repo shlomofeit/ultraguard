@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { router as authRouter } from './routes/auth.routes.js';
 import { router as eventsRouter } from './routes/events.routes.js';
 import { router as roomsRouter } from './routes/rooms.routes.js';
 
@@ -17,6 +18,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.use('/api/auth', authRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/rooms', roomsRouter);
 

@@ -81,6 +81,26 @@ export const getEventsSchema = z.object({
     .default(DEFAULT_EVENTS_LIMIT),
 });
 
+export const registerSchema = z.object({
+  name: z
+    .string('name must be a string')
+    .trim()
+    .min(2, 'name must be at least 2 characters')
+    .max(50, 'name must be at most 50 characters'),
+  email: z.email('email is not valid').toLowerCase(),
+  password: z
+    .string('password must be a string')
+    .min(8, 'password must be at least 8 characters')
+    .max(72, 'password must be at most 72 characters'),
+});
+
+export const loginSchema = z.object({
+  email: z.email('email is not valid').toLowerCase(),
+  password: z
+    .string('password must be a string')
+    .min(1, 'password is required'),
+});
+
 export function validateSchema(schema, body) {
   const result = schema.safeParse(body);
 
