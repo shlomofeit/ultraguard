@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useEventsStore } from "../store/eventsStore";
 import EventsTable from "../components/EventsTable";
+import { useAuthStore } from "../store/authStore";
 
 const DashboardPage = () => {
   const rooms = useEventsStore((state) => state.rooms);
@@ -12,6 +13,8 @@ const DashboardPage = () => {
   const setRooms = useEventsStore((state) => state.setRooms);
   const setSelectedRoom = useEventsStore((state) => state.setSelectedRoom);
   const setStopLive = useEventsStore((state) => state.setStopLive);
+  const user = useAuthStore((state) => state.user);
+  const setLogout = useAuthStore((state) => state.setLogout);
 
   useEffect(() => {
     setRooms();
@@ -24,7 +27,11 @@ const DashboardPage = () => {
 
   return (
     <main className="dashboard-page">
-      <h1>דשבורד</h1>
+      <header className="app-header">
+        <h1>דשבורד</h1>
+        <p>שלום, {user?.name}</p>
+        <button onClick={setLogout}>התנתק</button>
+      </header>
 
       <label htmlFor="room-select">חדר</label>
       <select
