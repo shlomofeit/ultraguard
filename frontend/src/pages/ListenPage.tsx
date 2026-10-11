@@ -14,6 +14,8 @@ const ListenPage = () => {
   );
   const setStopListening = useListenerStore((state) => state.setStopListening);
   const removeDetections = useListenerStore((state) => state.removeDetections);
+  const isConnected = useListenerStore((state) => state.isConnected);
+  const queueSize = useListenerStore((state) => state.queueSize);
 
   useEffect(() => {
     return () => setStopListening();
@@ -38,6 +40,12 @@ const ListenPage = () => {
 
       {error && <p className="form-error">{error}</p>}
       {sampleRate && <p>קצב דגימה: {sampleRate} Hz</p>}
+      {isListening && (
+        <p>
+          {isConnected ? "מחובר לשרת" : "אין חיבור לשרת"}
+          {queueSize > 0 && ` · ${queueSize} אירועים מחכים לשליחה`}
+        </p>
+      )}
 
       <DetectionList
         detections={detections}
