@@ -60,7 +60,8 @@ describe("pipeline", () => {
     expect(event.freqsHz.length).toBeGreaterThan(0);
     expect(event.freqsHz.length).toBeLessThanOrEqual(16);
     expect(event.peakFreqHz).toBeGreaterThanOrEqual(10000);
-    expect(event.type).toBe("unknown");
+    expect(event.type).toBe("lisnr");
+    expect(event.confidence).toBeGreaterThanOrEqual(0.75);
     expect(event.payload).toBeNull();
     expect(event.sampleRate).toBe(SAMPLE_RATE);
   });
