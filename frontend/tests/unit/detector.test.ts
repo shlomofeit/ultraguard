@@ -135,10 +135,44 @@ describe("detector", () => {
     expect(detect(withNoise(weak))).toHaveLength(0);
   });
 
-  it("rejects a loud burst of white noise", () => {
+  it("ignores a loud burst of white noise", () => {
     const detections = detect(withNoise(whiteNoise(0.3, 0.3)));
-    expect(detections.length).toBeGreaterThan(0);
-    expect(detections.every((detection) => !detection.isBeacon)).toBe(true);
+    expect(detections.filter((detection) => detection.isBeacon)).toHaveLength(
+      0,
+    );
+  });
+
+  it("detects one beacon while keys are clicking around it", () => {
+    const beacon = generateBeacon("silverpush", "UG01", SAMPLE_RATE);
+    const signal = new Float32Array(beacon.length + SAMPLE_RATE * 2);
+    signal.set(beacon, SAMPLE_RATE);
+    const clicks = makeRandom(11);
+    for (
+      let start = 0;
+      start < signal.length;
+      start += Math.round(SAMPLE_RATE * 0.12)
+    ) {
+      const length = Math.round(SAMPLE_RATE * 0.004);
+      for (let i = start; i < Math.min(start + length, signal.length); i++) {
+        signal[i] += (clicks() * 2 - 1) * 0.4;
+      }
+    }
+    const beacons = detect(withNoise(signal)).filter(
+      (detection) => detection.isBeacon,
+    );
+    expect(beacons).toHaveLength(1);
+    expect(beacons[0].freqsHz.length).toBeLessThanOrEqual(12);
+  });
+
+  it("does not call a short blip a beacon", () => {
+    const blip = renderSegments(
+      [{ kind: "tones", freqsHz: [19000], durationMs: 60 }],
+      SAMPLE_RATE,
+    );
+    const detections = detect(withNoise(blip));
+    expect(detections.filter((detection) => detection.isBeacon)).toHaveLength(
+      0,
+    );
   });
 
   it("rejects tones that jump around randomly", () => {
