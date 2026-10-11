@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useEventsStore } from "../store/eventsStore";
 import EventsTable from "../components/EventsTable";
 import { useAuthStore } from "../store/authStore";
+import EventsFilterBar from "../components/EventFilterBar";
+import EventsChart from "../components/EventsChart";
 
 const DashboardPage = () => {
   const rooms = useEventsStore((state) => state.rooms);
@@ -15,6 +17,8 @@ const DashboardPage = () => {
   const setStopLive = useEventsStore((state) => state.setStopLive);
   const user = useAuthStore((state) => state.user);
   const setLogout = useAuthStore((state) => state.setLogout);
+  const filter = useEventsStore((state) => state.filter);
+  const setFilter = useEventsStore((state) => state.setFilter);
 
   useEffect(() => {
     setRooms();
@@ -46,9 +50,18 @@ const DashboardPage = () => {
         ))}
       </select>
 
+      <EventsFilterBar filter={filter} onChange={setFilter} />
+
       <p>{isLive ? "מחובר, אירועים חדשים יופיעו כאן" : "אין חיבור לשרת"}</p>
       {error && <p className="form-error">{error}</p>}
-      {isLoading ? <p>טוען...</p> : <EventsTable events={events} />}
+      {isLoading ? (
+        <p>טוען...</p>
+      ) : (
+        <>
+          <EventsChart events={events} />
+          <EventsTable events={events} />
+        </>
+      )}
     </main>
   );
 };
