@@ -41,3 +41,8 @@ export interface SocketAck {
   success: boolean;
   message?: string;
 }
+
+export interface EventFilter {
+  type: EventType | "all";
+  rangeHours: number;
+}

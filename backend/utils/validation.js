@@ -17,6 +17,8 @@ const MAX_FREQ_HZ = 24000;
 const MAX_DURATION_MS = 60000;
 const MAX_FREQS = 16;
 const MAX_PAYLOAD_LENGTH = 256;
+const DEFAULT_EVENTS_LIMIT = 50;
+const MAX_EVENTS_LIMIT = 200;
 
 const freqSchema = z
   .number('Frequency must be a number')
@@ -64,6 +66,39 @@ export const heartbeatSchema = z.object({
     .number('queueSize must be a number')
     .int('queueSize must be a whole number')
     .min(0, 'queueSize must be at least 0'),
+});
+
+export const getEventsSchema = z.object({
+  roomId: z.uuid('roomId must be a valid UUID').optional(),
+  type: z.enum(EVENT_TYPES, 'type is not a known event type').optional(),
+  from: z.iso.datetime('from must be an ISO date').optional(),
+  to: z.iso.datetime('to must be an ISO date').optional(),
+  limit: z.coerce
+    .number('limit must be a number')
+    .int('limit must be a whole number')
+    .min(1, 'limit must be at least 1')
+    .max(MAX_EVENTS_LIMIT, 'limit must be at most 200')
+    .default(DEFAULT_EVENTS_LIMIT),
+});
+
+export const registerSchema = z.object({
+  name: z
+    .string('name must be a string')
+    .trim()
+    .min(2, 'name must be at least 2 characters')
+    .max(50, 'name must be at most 50 characters'),
+  email: z.email('email is not valid').toLowerCase(),
+  password: z
+    .string('password must be a string')
+    .min(8, 'password must be at least 8 characters')
+    .max(72, 'password must be at most 72 characters'),
+});
+
+export const loginSchema = z.object({
+  email: z.email('email is not valid').toLowerCase(),
+  password: z
+    .string('password must be a string')
+    .min(1, 'password is required'),
 });
 
 export function validateSchema(schema, body) {

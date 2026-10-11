@@ -13,4 +13,33 @@ async function createEvent(row) {
   return data;
 }
 
-export const eventsRepo = { createEvent };
+async function getEvents(filter) {
+  let query = supabase
+    .from('events')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(filter.limit);
+
+  if (filter.roomId) {
+    query = query.eq('room_id', filter.roomId);
+  }
+  if (filter.type) {
+    query = query.eq('type', filter.type);
+  }
+  if (filter.from) {
+    query = query.gte('started_at', filter.from);
+  }
+  if (filter.to) {
+    query = query.lte('started_at', filter.to);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export const eventsRepo = { createEvent, getEvents };

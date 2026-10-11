@@ -9,3 +9,12 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   unknown: "ביקון לא מזוהה",
   noise: "רעש",
 };
+
+export const BEACON_TYPES: EventType[] = [
+  "silverpush",
+  "lisnr",
+  "mosquito",
+  "chirp",
+  "tone",
+  "unknown",
+];

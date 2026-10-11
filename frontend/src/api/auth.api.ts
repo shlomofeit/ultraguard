@@ -1,4 +1,4 @@
-import axios, { type InternalAxiosRequestConfig } from "axios";
+import axios from "axios";
 import type { LoginInput, RegisterInput, User } from "../types/user";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/api/auth`;
@@ -35,22 +35,21 @@ export const refreshSession = async (): Promise<User> => {
   return data;
 };
 
-type RetryConfig = InternalAxiosRequestConfig & { isRetry?: boolean };
-
 export const setupSessionRefresh = () => {
-  axios.interceptors.response.use(undefined, async (err) => {
-    const config = err.config as RetryConfig | undefined;
-    const isAuthRequest = config?.url?.startsWith(BASE_URL);
-    if (
-      err.response?.status !== 401 ||
-      !config ||
-      config.isRetry ||
-      isAuthRequest
-    ) {
-      throw err;
-    }
-    config.isRetry = true;
-    await refreshSession();
-    return axios(config);
-  });
+  axios.interceptors.response.use(
+    (response) => response,
+    async (err) => {
+      const request = err.config;
+      const isExpired = err.response?.status === 401;
+      const isAuthUrl = request?.url?.startsWith(BASE_URL);
+
+      if (!isExpired || isAuthUrl || request.isRetry) {
+        throw err;
+      }
+
+      request.isRetry = true;
+      await refreshSession();
+      return axios(request);
+    },
+  );
 };
