@@ -13,6 +13,7 @@ import {
   pushFrame,
   type Detection,
 } from "./detector";
+import { classify } from "./classifier";
 
 export const MAX_EVENT_FREQS = 16;
 export const MAX_EVENT_DURATION_MS = 60000;
@@ -47,12 +48,13 @@ export const toEventInput = (
   sampleRate: number,
 ): EventInput => {
   const durationMs = Math.round(detection.durationMs);
+  const { type, confidence } = classify(detection);
   return {
     id: crypto.randomUUID(),
     startedAt: new Date(startedAtMs + detection.startMs).toISOString(),
     durationMs: Math.min(Math.max(durationMs, 1), MAX_EVENT_DURATION_MS),
-    type: "unknown",
-    confidence: 0,
+    type,
+    confidence,
     peakFreqHz: detection.peakFreqHz,
     freqsHz: detection.freqsHz.slice(0, MAX_EVENT_FREQS),
     snrDb: Math.round(detection.maxSnrDb * 10) / 10,

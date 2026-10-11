@@ -8,6 +8,11 @@ export const MAX_FRAME_FREQS = 10;
 export const MAX_BEACON_FREQS = 12;
 export const MIN_BEACON_MS = 150;
 
+export const MAIN_PEAK_SHARE = 0.1;
+export const SWEEP_SHARE = 0.8;
+export const MIN_FREQ_FRAMES = 2;
+export const MIN_SWEEP_PEAKS = 3;
+
 export interface FrameResult {
   isActive: boolean;
   peakFreqHz: number;
@@ -26,6 +31,9 @@ export interface Detection {
   isStable: boolean;
   isSweep: boolean;
   isBeacon: boolean;
+  mainPeaksHz: number[];
+  meanFrameFreqs: number;
+  switchRate: number;
 }
 
 export interface DetectorState {
@@ -109,27 +117,74 @@ const mostCommon = (values: number[]): number => {
 };
 
 const isMonotonic = (values: number[]): boolean => {
-  let rising = true;
-  let falling = true;
+  let rising = 0;
+  let falling = 0;
   for (let i = 1; i < values.length; i++) {
-    if (values[i] < values[i - 1]) rising = false;
-    if (values[i] > values[i - 1]) falling = false;
+    if (values[i] > values[i - 1]) rising++;
+    if (values[i] < values[i - 1]) falling++;
   }
-  return (rising || falling) && values[0] !== values[values.length - 1];
+  const steps = rising + falling;
+  if (
+    new Set(values).size < MIN_SWEEP_PEAKS ||
+    values[0] === values[values.length - 1]
+  ) {
+    return false;
+  }
+  return rising / steps >= SWEEP_SHARE || falling / steps >= SWEEP_SHARE;
+};
+
+const getRepeatedFreqs = (frames: FrameResult[]): number[] => {
+  const counts = new Map<number, number>();
+  for (const frame of frames) {
+    for (const freq of frame.activeFreqsHz) {
+      counts.set(freq, (counts.get(freq) ?? 0) + 1);
+    }
+  }
+  const minCount = frames.length >= 3 ? MIN_FREQ_FRAMES : 1;
+  return [...counts]
+    .filter(([, count]) => count >= minCount)
+    .map(([freq]) => freq)
+    .sort((a, b) => a - b);
+};
+
+const getMainPeaks = (peaks: number[]): number[] => {
+  const counts = new Map<number, number>();
+  for (const peak of peaks) {
+    counts.set(peak, (counts.get(peak) ?? 0) + 1);
+  }
+  const minCount = Math.max(2, peaks.length * MAIN_PEAK_SHARE);
+  return [...counts]
+    .filter(([, count]) => count >= minCount)
+    .map(([peak]) => peak)
+    .sort((a, b) => a - b);
+};
+
+const getSwitchRate = (peaks: number[]): number => {
+  if (peaks.length < 2) {
+    return 0;
+  }
+  let switches = 0;
+  for (let i = 1; i < peaks.length; i++) {
+    if (peaks[i] !== peaks[i - 1]) {
+      switches++;
+    }
+  }
+  return switches / (peaks.length - 1);
 };
 
 const buildDetection = (state: DetectorState): Detection => {
   const frames = state.activeFrames;
   const peaks = frames.map((frame) => frame.peakFreqHz);
   const distinctPeaks = new Set(peaks).size;
-  const freqsHz = [
-    ...new Set(frames.flatMap((frame) => frame.activeFreqsHz)),
-  ].sort((a, b) => a - b);
+  const freqsHz = getRepeatedFreqs(frames);
   const meanEntropy =
     frames.reduce((sum, frame) => sum + frame.entropy, 0) / frames.length;
   const isStable = distinctPeaks <= MAX_DISTINCT_PEAKS;
-  const isSweep = !isStable && isMonotonic(peaks);
+  const isSweep = isMonotonic(peaks);
   const durationMs = frames.length * state.frameMs;
+  const meanFrameFreqs =
+    frames.reduce((sum, frame) => sum + frame.activeFreqsHz.length, 0) /
+    frames.length;
 
   return {
     startMs: state.startFrame * state.frameMs,
@@ -146,6 +201,9 @@ const buildDetection = (state: DetectorState): Detection => {
       freqsHz.length <= MAX_BEACON_FREQS &&
       meanEntropy < ENTROPY_MAX &&
       (isStable || isSweep),
+    mainPeaksHz: getMainPeaks(peaks),
+    meanFrameFreqs,
+    switchRate: getSwitchRate(peaks),
   };
 };
 
