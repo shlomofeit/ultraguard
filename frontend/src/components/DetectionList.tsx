@@ -1,5 +1,5 @@
 import type { Detection } from "../listener/detector";
-import type { EventType } from "../types/event";
+import { EVENT_TYPE_LABELS } from "../utils/eventTypeLabels";
 import { classify } from "../listener/classifier";
 
 interface DetectionListProps {
@@ -7,22 +7,12 @@ interface DetectionListProps {
   startedAtMs: number;
 }
 
-const TYPE_LABELS: Record<EventType, string> = {
-  silverpush: "SilverPush",
-  lisnr: "LISNR",
-  mosquito: "Mosquito",
-  chirp: "סריקה (Chirp)",
-  tone: "צליל קבוע",
-  unknown: "ביקון לא מזוהה",
-  noise: "רעש",
-};
-
 const getTypeLabel = (detection: Detection) => {
   const { type, confidence } = classify(detection);
   if (type === "noise") {
-    return TYPE_LABELS.noise;
+    return EVENT_TYPE_LABELS.noise;
   }
-  return `${TYPE_LABELS[type]} (${Math.round(confidence * 100)}%)`;
+  return `${EVENT_TYPE_LABELS[type]} (${Math.round(confidence * 100)}%)`;
 };
 
 const formatTime = (ms: number) => new Date(ms).toLocaleTimeString("he-IL");

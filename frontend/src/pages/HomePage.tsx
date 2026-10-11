@@ -7,6 +7,7 @@ const HomePage = () => {
       <p>שומר אולטרסוני</p>
       <Link to="/beacons">מחולל ביקונים</Link>
       <Link to="/listen">מצב האזנה</Link>
+      <Link to="/dashboard">דשבורד</Link>
     </main>
   );
 };
