@@ -1,12 +1,8 @@
 import type { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
-interface ProtectedRouteProps {
-  children: ReactNode;
-}
-
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = () => {
   const user = useAuthStore((state) => state.user);
   const isChecked = useAuthStore((state) => state.isChecked);
 
@@ -16,7 +12,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  return children;
+  return <Outlet />;
 };
 
 export default ProtectedRoute;
