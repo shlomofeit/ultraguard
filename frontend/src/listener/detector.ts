@@ -4,6 +4,9 @@ export const ENTROPY_MAX = 0.8;
 export const GAP_FRAMES = 5;
 export const MIN_FRAMES = 2;
 export const MAX_DISTINCT_PEAKS = 8;
+export const MAX_FRAME_FREQS = 10;
+export const MAX_BEACON_FREQS = 12;
+export const MIN_BEACON_MS = 150;
 
 export interface FrameResult {
   isActive: boolean;
@@ -69,11 +72,14 @@ export const analyzeFrame = (
       snr[band] >= SNR_THRESHOLD_DB &&
       levelsDb[band] >= peakLevel - PEAK_RANGE_DB,
   );
+  const entropy = spectralEntropy(levelsDb, floorDb);
+  const isTonal =
+    activeFreqsHz.length <= MAX_FRAME_FREQS && entropy < ENTROPY_MAX;
   return {
-    isActive: activeFreqsHz.length > 0,
+    isActive: activeFreqsHz.length > 0 && isTonal,
     peakFreqHz: freqs[peakIndex],
     peakSnrDb: snr[peakIndex],
-    entropy: spectralEntropy(levelsDb, floorDb),
+    entropy,
     activeFreqsHz,
   };
 };
@@ -123,10 +129,11 @@ const buildDetection = (state: DetectorState): Detection => {
     frames.reduce((sum, frame) => sum + frame.entropy, 0) / frames.length;
   const isStable = distinctPeaks <= MAX_DISTINCT_PEAKS;
   const isSweep = !isStable && isMonotonic(peaks);
+  const durationMs = frames.length * state.frameMs;
 
   return {
     startMs: state.startFrame * state.frameMs,
-    durationMs: frames.length * state.frameMs,
+    durationMs,
     peakFreqHz: mostCommon(peaks),
     freqsHz,
     maxSnrDb: Math.max(...frames.map((frame) => frame.peakSnrDb)),
@@ -135,6 +142,8 @@ const buildDetection = (state: DetectorState): Detection => {
     isSweep,
     isBeacon:
       frames.length >= MIN_FRAMES &&
+      durationMs >= MIN_BEACON_MS &&
+      freqsHz.length <= MAX_BEACON_FREQS &&
       meanEntropy < ENTROPY_MAX &&
       (isStable || isSweep),
   };
