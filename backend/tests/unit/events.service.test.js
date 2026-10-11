@@ -3,7 +3,7 @@ import { eventsService } from '../../services/events.service.js';
 import { eventsRepo } from '../../repositories/events.repo.js';
 
 vi.mock('../../repositories/events.repo.js', () => ({
-  eventsRepo: { createEvent: vi.fn() },
+  eventsRepo: { createEvent: vi.fn(), getEvents: vi.fn() },
 }));
 
 const device = { id: 'device-1', roomId: 'room-1' };
@@ -54,5 +54,48 @@ describe('eventsService.createEvent', () => {
     const event = await eventsService.createEvent(validEvent, device);
 
     expect(event).toBeNull();
+  });
+});
+
+describe('eventsService.getEvents', () => {
+  beforeEach(() => {
+    vi.mocked(eventsRepo.getEvents).mockReset();
+  });
+
+  it('uses a limit of 50 when none is given', async () => {
+    vi.mocked(eventsRepo.getEvents).mockResolvedValue([]);
+
+    await eventsService.getEvents({});
+
+    const filter = vi.mocked(eventsRepo.getEvents).mock.calls[0][0];
+    expect(filter.limit).toBe(50);
+  });
+
+  it('passes only the allowed fields to the repository', async () => {
+    vi.mocked(eventsRepo.getEvents).mockResolvedValue([]);
+
+    await eventsService.getEvents({ limit: '10', hack: '1' });
+
+    const filter = vi.mocked(eventsRepo.getEvents).mock.calls[0][0];
+    expect(filter).toEqual({ limit: 10 });
+  });
+
+  it('rejects a limit above 200 with status 400', async () => {
+    await expect(
+      eventsService.getEvents({ limit: '500' })
+    ).rejects.toMatchObject({ status: 400 });
+    expect(eventsRepo.getEvents).not.toHaveBeenCalled();
+  });
+
+  it('returns events in camelCase', async () => {
+    vi.mocked(eventsRepo.getEvents).mockResolvedValue([
+      { id: validEvent.id, room_id: 'room-1', peak_freq_hz: 18000 },
+    ]);
+
+    const [event] = await eventsService.getEvents({});
+
+    expect(event.roomId).toBe('room-1');
+    expect(event.peakFreqHz).toBe(18000);
+    expect(event).not.toHaveProperty('room_id');
   });
 });
