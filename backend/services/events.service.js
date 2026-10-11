@@ -1,5 +1,9 @@
 import { eventsRepo } from '../repositories/events.repo.js';
-import { createEventSchema, validateSchema } from '../utils/validation.js';
+import {
+  createEventSchema,
+  validateSchema,
+  getEventsSchema,
+} from '../utils/validation.js';
 
 function toRow(event, device) {
   const row = {
@@ -54,4 +58,12 @@ async function createEvent(eventData, device) {
   return savedEvent;
 }
 
-export const eventsService = { createEvent };
+async function getEvents(query) {
+  const filter = validateSchema(getEventsSchema, query);
+  const rows = await eventsRepo.getEvents(filter);
+  const events = rows.map((row) => toEvent(row));
+
+  return events;
+}
+
+export const eventsService = { createEvent, getEvents };
