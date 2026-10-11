@@ -16,7 +16,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use((req, res) => {
-  res.json(`${req.url} doesn't have ${req.method} method`);
+  res.status(404).json(`${req.url} doesn't have ${req.method} method`);
 });
 
 app.use(errorHandler);
