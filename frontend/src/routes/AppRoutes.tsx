@@ -11,7 +11,7 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route index element={<Navigate to="/login" />} />
+        {/* <Route index element={<Navigate to="/" />} /> */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>
