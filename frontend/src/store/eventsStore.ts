@@ -1,15 +1,17 @@
 import { create } from "zustand";
 import { io, type Socket } from "socket.io-client";
-import type { Event } from "../types/event";
+import type { Event, EventFilter } from "../types/event";
 import type { Room } from "../types/room";
 import { getRooms } from "../api/rooms.api";
 import { getEvents } from "../api/events.api";
 import { LIVE_EVENT, LIVE_UNWATCH, LIVE_WATCH } from "../utils/socketEvents";
 import { getErrorDetails } from "../utils/getErrorDetails";
+import { matchesFilter } from "../utils/eventFilter";
 
 const LIVE_URL = `${import.meta.env.VITE_API_URL}/live`;
 
 export const MAX_EVENTS = 200;
+const DEFAULT_FILTER: EventFilter = { type: "all", rangeHours: 24 };
 
 interface EventsStore {
   rooms: Room[];
@@ -18,9 +20,11 @@ interface EventsStore {
   isLive: boolean;
   isLoading: boolean;
   error: string | null;
+  filter: EventFilter;
   setRooms: () => void;
   setSelectedRoom: (roomId: string) => void;
   setStopLive: () => void;
+  setFilter: (filter: EventFilter) => void;
 }
 
 let socket: Socket | null = null;
@@ -42,6 +46,12 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     socket.on(LIVE_EVENT, (event: Event) => {
       set((state) => {
         const isDuplicate = state.events.some((item) => item.id === event.id);
+        const isVisible =
+          event.roomId === state.selectedRoomId &&
+          matchesFilter(event, state.filter, Date.now());
+        if (!isVisible || isDuplicate) {
+          return state;
+        }
         if (event.roomId !== state.selectedRoomId || isDuplicate) {
           return state;
         }
@@ -58,6 +68,7 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     isLive: false,
     isLoading: false,
     error: null,
+    filter: DEFAULT_FILTER,
 
     setRooms: async () => {
       set({ isLoading: true, error: null });
@@ -84,7 +95,7 @@ export const useEventsStore = create<EventsStore>((set, get) => {
       live.emit(LIVE_WATCH, roomId);
       set({ selectedRoomId: roomId, events: [], isLoading: true, error: null });
       try {
-        const events = await getEvents(roomId);
+        const events = await getEvents(roomId, get().filter);
         if (get().selectedRoomId === roomId) {
           set({ events, isLoading: false });
         }
@@ -93,6 +104,14 @@ export const useEventsStore = create<EventsStore>((set, get) => {
           isLoading: false,
           error: getErrorDetails(err, "לא הצלחתי לטעון את האירועים"),
         });
+      }
+    },
+
+    setFilter: (filter) => {
+      set({ filter });
+      const roomId = get().selectedRoomId;
+      if (roomId) {
+        get().setSelectedRoom(roomId);
       }
     },
 
