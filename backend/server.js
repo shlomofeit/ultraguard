@@ -2,7 +2,6 @@ import 'dotenv/config';
 import app from './app.js';
 import http from 'http';
 import { Server } from 'socket.io';
-import cors from 'cors';
 import { registerListenerSocket } from './sockets/listener.socket.js';
 import { registerLiveSocket } from './sockets/live.socket.js';
 
