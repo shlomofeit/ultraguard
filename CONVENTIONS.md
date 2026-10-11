@@ -24,28 +24,31 @@
 
 ## מבנה התיקיות
 
+הפרויקט מחולק לשני פרויקטים נפרדים בתוך אותו ריפו. לכל אחד `package.json` משלו, `node_modules` משלו, והוא רץ בטרמינל משלו.
+
 ```
-public/                 # פרונט, React + TypeScript, שורש של Vite
-  types/                # טיפוסים, קובץ לכל ישות
-  api/                  # בקשות axios בלבד, קובץ לכל תחום
-  store/                # Zustand, קובץ לכל תחום, קורא ל-api
-  components/           # רכיבים שמקבלים props בלבד
-  pages/                # עמודים שמחוברים ל-store
-  routes/               # הגדרת נתיבים והגנה עליהם
-  listener/             # המאזין: קליטה, עיבוד אותות, גילוי, סיווג, שליחה. בלי React
-  utils/                # פונקציות עזר טהורות
-  styles/
-src/                    # בק, Node.js + Express. המבנה המלא ב-BACKEND.md
-  routes/  sockets/  services/  repositories/  utils/  db/
-  sockets/              # הודעות socket.io, מקביל ל-routes + ctrls
-  utils/                # סכמות zod, טיפול שגיאות, JWT
-  db/                   # חיבור ל-Supabase ול-MongoDB
+frontend/               # React + TypeScript + Vite. לפי המסמך הזה
+  index.html
+  .env.example          # VITE_API_URL
+  src/
+    main.tsx  App.tsx
+    types/              # טיפוסים, קובץ לכל ישות
+    api/                # בקשות axios בלבד, קובץ לכל תחום
+    store/              # Zustand, קובץ לכל תחום, קורא ל-api
+    components/         # רכיבים שמקבלים props בלבד
+    pages/              # עמודים שמחוברים ל-store
+    routes/             # הגדרת נתיבים והגנה עליהם
+    listener/           # המאזין: קליטה, עיבוד אותות, גילוי, סיווג, שליחה. בלי React
+    utils/              # פונקציות עזר טהורות
+    styles/
+  public/               # קבצים סטטיים (אייקונים)
+  tests/unit/           # Vitest
+backend/                # Node.js + Express + socket.io. לפי BACKEND.md
 sql/                    # טבלאות, RLS ופונקציות של Supabase
 python-listener/        # מאזין אופציונלי ב-Python
-tests/                  # unit/ (Vitest), e2e/ (Playwright)
 ```
 
-התחומים (domains) בבק: `auth`, `rooms`, `events`, `alerts`, `stats`. קובץ לכל תחום בכל שכבה.
+התחומים (domains): `auth`, `rooms`, `events`, `alerts`, `stats`. קובץ api וקובץ store לכל תחום.
 
 ## Frontend: קומפוננטות
 
@@ -62,8 +65,9 @@ tests/                  # unit/ (Vitest), e2e/ (Playwright)
 ## Frontend: api ו-store
 
 - כל בקשות הרשת נמצאות ב-`api/`. פונקציה שם שולחת בקשה ומחזירה את ה-`data`, בלי state.
-- `axios` רגיל עם `BASE_URL` קבוע בראש הקובץ, בלי `axios.create`.
-- הטוקן מצורף דרך פונקציה אחת (`getAuth()`) שמועברת כפרמטר אחרון לבקשה.
+- `axios` רגיל, בלי `axios.create`. בראש כל קובץ api: ``const BASE_URL = `${import.meta.env.VITE_API_URL}/api/rooms`;`` (עם שם התחום).
+- ההתחברות נשמרת ב-cookie מסוג httpOnly שהשרת קובע, לכן אין טוקן בקוד הפרונט. כל בקשה נשלחת עם `{ withCredentials: true }`, כדי שהדפדפן יצרף את ה-cookie.
+- השרת מחזיר את הנתונים ישירות (בלי `{ success, data }`), ושגיאה בצורה `{ message }`.
 - בכל store יש `isLoading` ו-`error`, וכל פעולה אסינכרונית בנויה אותו דבר:
   - בהתחלה `set({ isLoading: true, error: null })`.
   - `try` עם הקריאה ל-api ועדכון ה-state.
@@ -96,7 +100,7 @@ tests/                  # unit/ (Vitest), e2e/ (Playwright)
 - טיפוס נפרד לערכי הטופס, שבו המספרים הם מחרוזות (`RoomFormValues`).
 - ייבוא טיפוסים עם `import type`.
 
-## המאזין (`public/listener/`)
+## המאזין (`frontend/src/listener/`)
 
 - בלי React ובלי store. ה-`listenerStore` מפעיל אותו ושומר את התוצאות, והעמוד קורא רק מה-store.
 - `dsp.ts`, `detector.ts`, `classifier.ts` ו-`decoder.ts` הם פונקציות טהורות: מקבלות מספרים ומחזירות מספרים, בלי Web Audio. כך בודקים אותן ב-Vitest בלי דפדפן.
@@ -107,14 +111,14 @@ tests/                  # unit/ (Vitest), e2e/ (Playwright)
 
 ## Backend
 
-כל הקוד ב-`src/` נכתב לפי `BACKEND.md`, בסגנון של אבי. המסמך הזה (`CONVENTIONS.md`) חל על `public/` ועל `tests/` של הפרונט והמאזין.
+כל הקוד ב-`backend/` נכתב לפי `BACKEND.md`, בסגנון של אבי. המסמך הזה (`CONVENTIONS.md`) חל על `frontend/`.
 
 כשמבקשים מכלי AI לכתוב קוד שרת, מצרפים את `BACKEND.md` ולא את המסמך הזה.
 
 ## החוזה בין המאזין לשרת
 
-- `public/types/event.ts` ו-`src/utils/validation.js` מתארים את אותן הודעות. שינוי באחד מחייב שינוי בשני באותו commit, ושני השותפים מאשרים.
-- שמות אירועי socket נמצאים רק ב-`socketEvents.ts` וב-`socketEvents.js`, זהים בשניהם. לא כותבים שם של אירוע כמחרוזת בקוד.
+- `frontend/src/types/event.ts` ו-`backend/utils/validation.js` מתארים את אותן הודעות. שינוי באחד מחייב שינוי בשני באותו commit, ושני השותפים מאשרים.
+- שמות אירועי socket נמצאים רק ב-`frontend/src/utils/socketEvents.ts` וב-`backend/utils/socketEvents.js`, זהים בשניהם. לא כותבים שם של אירוע כמחרוזת בקוד.
 - `listener:` מהמאזין לשרת, `live:` מהשרת לצופים.
 
 ## בדיקות

@@ -1,8 +1,8 @@
-# UltraGuard: עקרונות כתיבת קוד לשרת (`src/`)
+# UltraGuard: עקרונות כתיבת קוד לשרת (`backend/`)
 
-> **לכלי ה-AI:** המסמך הזה קובע את הסגנון של כל קוד השרת בתיקייה `src/`. הוא מבוסס על הסגנון האישי של אבי (פרויקט tzofia-eye), עם התאמות לפרויקט הזה. פעל לפי הכללים כאן. כשאין כלל שמכסה מקרה, בחר את הפתרון הפשוט ביותר שדומה לקוד הקיים. אל תוסיף ספריות, תבניות או מבנים שלא מופיעים כאן בלי לשאול.
+> **לכלי ה-AI:** המסמך הזה קובע את הסגנון של כל קוד השרת בתיקייה `backend/`. הוא מבוסס על הסגנון האישי של אבי (פרויקט tzofia-eye), עם התאמות לפרויקט הזה. פעל לפי הכללים כאן. כשאין כלל שמכסה מקרה, בחר את הפתרון הפשוט ביותר שדומה לקוד הקיים. אל תוסיף ספריות, תבניות או מבנים שלא מופיעים כאן בלי לשאול.
 >
-> הפרונט (`public/`) כתוב לפי `CONVENTIONS.md`, לא לפי המסמך הזה. החוזה בין המאזין לשרת (סעיף 9) מחייב את שני הצדדים.
+> הפרונט (`frontend/`) כתוב לפי `CONVENTIONS.md`, לא לפי המסמך הזה. החוזה בין המאזין לשרת (סעיף 9) מחייב את שני הצדדים.
 >
 > כל השאלות הפתוחות מהמסמך האישי של אבי (סעיף 8 שם) שנוגעות לשרת הוכרעו כאן. אין צורך לשאול עליהן.
 
@@ -30,32 +30,45 @@
 ## 2. מבנה תיקיות
 
 ```
-src/
+backend/
+├── package.json
+├── .env.example
 ├── app.js            # Express: middlewares גלובליים, routers, 404, errorHandler. מייצא את app
 ├── server.js         # שרת HTTP, socket.io, ו-listen
-├── db/               # supabase.js, mongo.js
+├── config/           # supabase.js, mongo.js
 ├── routes/           # <domain>.routes.js, כולל ה-handler עצמו
 ├── sockets/          # <name>.socket.js, המקביל של routes להודעות socket.io
 ├── services/         # <domain>.service.js
 ├── repositories/     # <domain>.repo.js
-└── utils/            # middlewares, validation.js, errorHandler.js, socketEvents.js, generateToken.js
+├── middlewares/      # errorHandler.js, authMiddleware.js, adminMiddleware.js
+├── utils/            # validation.js, socketEvents.js, generateToken.js
+└── tests/unit/       # Vitest
 ```
+
+הרצה: `cd backend`, `npm install`, ואז `npm run dev` (פורט 3000).
 
 | תיקייה | אחריות |
 |---|---|
-| `app.js` | הקמת Express. סדר middlewares: `express.json()`, `cookieParser()`, `helmet()`. אחר כך ה-routers, ה-404 וה-`errorHandler` |
+| `app.js` | הקמת Express. סדר middlewares: `express.json()`, `cookieParser()`, `cors(...)`, `helmet()`. אחר כך ה-routers, ה-404 וה-`errorHandler`. בלי הגשת קבצים סטטיים |
 | `server.js` | `http.createServer(app)`, חיבור socket.io, רישום ה-sockets, `listen` |
-| `db/` | חיבור יחיד לכל מסד |
+| `config/` | חיבור יחיד לכל מסד |
 | `routes/` | נתיב, שרשרת middlewares, וה-handler. אין תיקיית controllers |
 | `sockets/` | אימות החיבור, קבלת הודעה, קריאה ל-service, החזרת אישור קבלה |
 | `services/` | ולידציה, כללים עסקיים, זריקת שגיאות עם `status`, המרת צורת המסמך |
 | `repositories/` | גישה למסד בלבד |
-| `utils/` | כל השאר. אין תיקיית middlewares נפרדת |
+| `middlewares/` | `errorHandler` ובדיקות הרשאה |
+| `utils/` | כל השאר: ולידציה, שמות אירועי socket, יצירת טוקן |
 
 - מבנה שטוח לפי סוג קובץ, לא לפי feature.
 - התחומים (domains): `auth`, `rooms`, `events`, `alerts`, `stats`.
-- אין `cors`: הפרונט והשרת יושבים באותה כתובת (בפיתוח דרך ה-proxy של Vite).
+- השרת מטפל רק ב-API וב-socket.io. הוא לא מגיש את קבצי הפרונט.
+- הפרונט רץ בכתובת אחרת (בפיתוח `http://localhost:5173`), לכן יש `cors` עם `credentials`, כדי שה-cookie של ההתחברות יעבור:
 
+```js
+app.use(cors({ origin: process.env.CLIENT_ORIGIN, credentials: true }));
+```
+
+  ואותו דבר ב-socket.io: `new Server(server, { cors: { origin: process.env.CLIENT_ORIGIN, credentials: true } })`.
 ---
 
 ## 3. שמות
@@ -72,15 +85,15 @@ src/
 | אובייקט מיוצא | `<domain>Service` / `<domain>Repo` | `export const eventsService = {` |
 | router | `router` ביצוא, `router as <domain>Router` בייבוא | `import { router as roomsRouter } from './routes/rooms.routes.js';` |
 | zod schemas | `<action><Entity>Schema` | `createEventSchema`, `loginSchema` |
-| משתני סביבה | `UPPER_SNAKE_CASE` | `MONGO_URI`, `SECRET_KEY` |
+| משתני סביבה | `UPPER_SNAKE_CASE` | `MONGODB_URI`, `SECRET_KEY` |
 | תפקידים | `'admin'`, `'viewer'` | – |
 
 ---
 
 ## 4. שכבות וזרימה
 
-HTTP: `app.js` → `routes` (+ middlewares) → `services` → `repositories` → `db`
-socket: `server.js` → `sockets` → `services` → `repositories` → `db`
+HTTP: `app.js` → `routes` (+ middlewares) → `services` → `repositories` → `config`
+socket: `server.js` → `sockets` → `services` → `repositories` → `config`
 
 | שכבה | מה היא עושה | מה אסור לה |
 |---|---|---|
@@ -123,7 +136,7 @@ socket.on(LISTENER_EVENT, async (data, ack) => {
 
 ## 5. ולידציה ושגיאות
 
-- כל ה-schemas בקובץ אחד: `src/utils/validation.js`. גם הסכמות של החוזה (סעיף 9).
+- כל ה-schemas בקובץ אחד: `utils/validation.js`. גם הסכמות של החוזה (סעיף 9).
 - הוולידציה בתחילת פונקציית ה-service: `validateSchema(createEventSchema, eventData);`.
 - `validateSchema` זורק שגיאה עם `status = 400` והודעת הבעיה הראשונה מ-zod, ומחזיר את `result.data`.
 - יצירת שגיאה בשלוש שורות, בלי class ובלי helper:
@@ -142,7 +155,7 @@ throw error;
 | 404 | לא נמצא |
 | 409 | אימייל תפוס |
 
-- `errorHandler` יחיד ב-`utils/errorHandler.js`, **עם 4 פרמטרים** `(err, req, res, next)`, אחרת Express לא מזהה אותו. מחזיר `res.status(status).json({ message })`, ובשגיאה בלי `status` מחזיר 500 עם `'Internal server error!'`.
+- `errorHandler` יחיד ב-`middlewares/errorHandler.js`, **עם 4 פרמטרים** `(err, req, res, next)`, אחרת Express לא מזהה אותו. מחזיר `res.status(status).json({ message })`, ובשגיאה בלי `status` מחזיר 500 עם `'Internal server error!'`.
 - נתיב לא קיים: `res.status(404).json({ message: \`${req.url} doesn't have ${req.method} method!\` })`.
 
 ---
@@ -161,7 +174,7 @@ throw error;
 
 ### Supabase (PostgreSQL)
 
-- `db/supabase.js` יוצר client אחד עם `SUPABASE_URL` ו-`SUPABASE_SERVICE_ROLE_KEY`, ומייצא אותו.
+- `config/supabase.js` יוצר client אחד עם `SUPABASE_URL` ו-`SUPABASE_SECRET_KEY`, ומייצא אותו.
 - repository:
 
 ```js
@@ -184,8 +197,8 @@ async function createEvent(row) {
 
 ### MongoDB
 
-- ה-driver הרשמי. `db/mongo.js` שומר חיבור יחיד (`let client, db;`) ומייצא `connectToDb()`.
-- בכל repo: `getCollection()` פנימית, וכל פונקציה פותחת ב-`const collection = await getCollection();`.
+- ה-driver הרשמי. `config/mongo.js` שומר חיבור יחיד (`let client, db;`) ומייצא `connectToMongo()`, שמחזיר `client.db(process.env.MONGODB_NAME)`.
+- בכל repo: `getCollection()` פנימית שקוראת ל-`connectToMongo()`, וכל פונקציה פותחת ב-`const collection = await getCollection();`.
 - `find(filter).toArray()`, `findOne`, `insertOne`, `findOneAndUpdate` עם `{ $set: ... }` ו-`{ returnDocument: 'after' }`, `findOneAndDelete`.
 - ב-service: `const { _id, ...rest } = doc; return { id: _id.toString(), ...rest };`.
 - מסמכים שמקושרים לאירוע (`eventFeatures`, `spectrogramSnapshots`) שומרים את ה-`id` של האירוע בשדה `eventId`.
@@ -194,7 +207,7 @@ async function createEvent(row) {
 
 - `import 'dotenv/config';` הוא ה-import הראשון ב-`server.js`.
 - `process.env.X` בנקודת השימוש. אין קובץ config מרכזי.
-- כל משתנה חדש נכנס ל-`.env.example` עם ערך ריק.
+- כל משתנה חדש נכנס ל-`backend/.env.example` עם ערך ריק. כרגע: `PORT`, `CLIENT_ORIGIN`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `MONGODB_URI`, `MONGODB_NAME`, `SECRET_KEY`.
 
 ---
 
@@ -213,8 +226,8 @@ async function createEvent(row) {
 
 ## 9. החוזה עם המאזין
 
-- הטיפוסים בפרונט (`public/types/event.ts`) והסכמות בשרת (`src/utils/validation.js`) מתארים את אותן הודעות. שינוי באחד מחייב שינוי בשני באותו commit, ושני השותפים מאשרים.
-- שמות אירועי socket רק ב-`src/utils/socketEvents.js` (ובמקביל `public/utils/socketEvents.ts`). לא כותבים שם של אירוע כמחרוזת בקוד.
+- הטיפוסים בפרונט (`frontend/src/types/event.ts`) והסכמות בשרת (`backend/utils/validation.js`) מתארים את אותן הודעות. שינוי באחד מחייב שינוי בשני באותו commit, ושני השותפים מאשרים.
+- שמות אירועי socket רק ב-`backend/utils/socketEvents.js` (ובמקביל `frontend/src/utils/socketEvents.ts`). לא כותבים שם של אירוע כמחרוזת בקוד.
 - `listener:` מהמאזין לשרת, `live:` מהשרת לצופים.
 - אירוע עם `id` שכבר קיים לא נשמר שוב, ובכל זאת מקבל `{ success: true }`. כך שליחה חוזרת אחרי ניתוק לא יוצרת כפילות, והמאזין מוחק אותו מהתור.
 
@@ -222,7 +235,7 @@ async function createEvent(row) {
 
 ## 10. בדיקות ו-Git
 
-- בדיקות יחידה ב-Vitest, ב-`tests/unit/<domain>.service.test.js`. ה-repositories מוחלפים ב-`vi.mock`.
+- בדיקות יחידה ב-Vitest, ב-`backend/tests/unit/<domain>.service.test.js`. ה-repositories מוחלפים ב-`vi.mock`.
 - חובה לפי ההצעה: ולידציה של אירוע (`events.service`), טוקן שפג תוקפו (`auth`), התאמת אירוע לכלל (`alerts.service`).
 - `main` יציב, `dev` לאינטגרציה, `feature/<משימה>` לכל משימה. כל שינוי דרך PR אל `dev`, והשותף מאשר.
 - commits קטנים, הודעה באנגלית שמתחילה בפועל: "Added…", "Fixed…", "Updated…".

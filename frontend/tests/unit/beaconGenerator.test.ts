@@ -7,9 +7,9 @@ import {
   generateBeacon,
   msToSamples,
   textToBytes,
-} from "../../public/listener/beaconGenerator";
-import { LISNR, MOSQUITO, SILVERPUSH } from "../../public/listener/beacons";
-import type { ToneSegment } from "../../public/types/beacon";
+} from "../../src/listener/beaconGenerator";
+import { LISNR, MOSQUITO, SILVERPUSH } from "../../src/listener/beacons";
+import type { ToneSegment } from "../../src/types/beacon";
 
 const SAMPLE_RATE = 48000;
 
