@@ -1,14 +1,13 @@
-import type { Detection } from "../listener/detector";
 import { EVENT_TYPE_LABELS } from "../utils/eventTypeLabels";
-import { classify } from "../listener/classifier";
+import { getDetectionType, type PipelineDetection } from "../listener/pipeline";
 
 interface DetectionListProps {
-  detections: Detection[];
+  detections: PipelineDetection[];
   startedAtMs: number;
 }
 
-const getTypeLabel = (detection: Detection) => {
-  const { type, confidence } = classify(detection);
+const getTypeLabel = (detection: PipelineDetection) => {
+  const { type, confidence } = getDetectionType(detection);
   if (type === "noise") {
     return EVENT_TYPE_LABELS.noise;
   }
@@ -32,6 +31,7 @@ const DetectionList = ({ detections, startedAtMs }: DetectionListProps) => {
           <th>תדרים</th>
           <th>משך</th>
           <th>SNR</th>
+          <th>תוכן</th>
         </tr>
       </thead>
       <tbody>
@@ -43,6 +43,7 @@ const DetectionList = ({ detections, startedAtMs }: DetectionListProps) => {
             <td dir="ltr">{detection.freqsHz.length}</td>
             <td dir="ltr">{Math.round(detection.durationMs)} ms</td>
             <td dir="ltr">{detection.maxSnrDb.toFixed(0)} dB</td>
+            <td dir="auto">{detection.payload ?? "–"}</td>
           </tr>
         ))}
       </tbody>

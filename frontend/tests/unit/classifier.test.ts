@@ -98,7 +98,7 @@ const TEXTS = ["UG01", "hello", "shlomo", "1234"];
 
 const detectFirst = (type: BeaconType, text: string, sampleRate: number) => {
   const beacon = generateBeacon(type, text, sampleRate);
-  const samples = new Float32Array(sampleRate * 3 + beacon.length);
+  const samples = new Float32Array(sampleRate * 4 + beacon.length);
   samples.set(beacon, sampleRate * 2);
   for (let i = 0; i < samples.length; i++) {
     samples[i] += Math.sin(i * 12.9898) * 0.001;

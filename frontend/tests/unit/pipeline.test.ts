@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createPipeline, toEventInput } from "../../src/listener/pipeline";
 import { FRAME_SIZE } from "../../src/listener/dsp";
 import { generateBeacon } from "../../src/listener/beaconGenerator";
-import type { Detection } from "../../src/listener/detector";
+import {
+  createPipeline,
+  toEventInput,
+  type PipelineDetection,
+} from "../../src/listener/pipeline";
 
 const SAMPLE_RATE = 44100;
 
@@ -16,9 +19,9 @@ const withSilence = (signal: Float32Array): Float32Array => {
   return samples;
 };
 
-const run = (samples: Float32Array): Detection[] => {
+const run = (samples: Float32Array): PipelineDetection[] => {
   const pipeline = createPipeline(SAMPLE_RATE);
-  const detections: Detection[] = [];
+  const detections: PipelineDetection[] = [];
   for (
     let start = 0;
     start + FRAME_SIZE <= samples.length;
@@ -62,7 +65,21 @@ describe("pipeline", () => {
     expect(event.peakFreqHz).toBeGreaterThanOrEqual(10000);
     expect(event.type).toBe("lisnr");
     expect(event.confidence).toBeGreaterThanOrEqual(0.75);
-    expect(event.payload).toBeNull();
     expect(event.sampleRate).toBe(SAMPLE_RATE);
+    expect(event.payload).toBe("UG01");
+  });
+
+  it("decodes the text of every text beacon", () => {
+    const cases = [
+      { type: "silverpush" as const, text: "UG01" },
+      { type: "mosquito" as const, text: "Room 7" },
+      { type: "lisnr" as const, text: "Hi" },
+    ];
+    for (const { type, text } of cases) {
+      const beacons = run(
+        withSilence(generateBeacon(type, text, SAMPLE_RATE)),
+      ).filter((detection) => detection.isBeacon);
+      expect(beacons[0].payload).toBe(text);
+    }
   });
 });
