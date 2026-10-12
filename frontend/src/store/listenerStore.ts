@@ -30,6 +30,7 @@ interface ListenerStore {
   isLoading: boolean;
   error: string | null;
   sampleRate: number | null;
+  analyser: AnalyserNode | null;
   startedAtMs: number | null;
   detections: CheckedDetection[];
   isConnected: boolean;
@@ -50,6 +51,7 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
   isLoading: false,
   error: null,
   sampleRate: null,
+  analyser: null,
   startedAtMs: null,
   detections: [],
   isConnected: false,
@@ -105,6 +107,7 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
         isListening: true,
         isLoading: false,
         sampleRate: capture.sampleRate,
+        analyser: capture.analyser,
         startedAtMs,
       });
     } catch (err) {
@@ -122,7 +125,12 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
     capture = null;
     sender?.stop();
     sender = null;
-    set({ isListening: false, isConnected: false, queueSize: 0 });
+    set({
+      isListening: false,
+      isConnected: false,
+      queueSize: 0,
+      analyser: null,
+    });
   },
 
   removeDetections: () => set({ detections: [] }),
