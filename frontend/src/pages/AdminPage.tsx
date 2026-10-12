@@ -1,7 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAdminStore } from "../store/adminStore";
+import type { Room, RoomInput } from "../types/room";
+import type { Device } from "../types/device";
 import RoomForm from "../components/RoomForm";
+import RoomsList from "../components/RoomsList";
 import DeviceForm from "../components/DeviceForm";
+import DeviceKeyBox from "../components/DeviceKeyBox";
 import DevicesTable from "../components/DevicesTable";
 
 const AdminPage = () => {
@@ -12,14 +16,57 @@ const AdminPage = () => {
   const error = useAdminStore((state) => state.error);
   const setAdminData = useAdminStore((state) => state.setAdminData);
   const setNewRoom = useAdminStore((state) => state.setNewRoom);
+  const setEditedRoom = useAdminStore((state) => state.setEditedRoom);
+  const removeRoom = useAdminStore((state) => state.removeRoom);
   const setNewDevice = useAdminStore((state) => state.setNewDevice);
+  const setRevokedDevice = useAdminStore((state) => state.setRevokedDevice);
   const removeDevice = useAdminStore((state) => state.removeDevice);
   const removeNewDeviceKey = useAdminStore((state) => state.removeNewDeviceKey);
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
 
   useEffect(() => {
     setAdminData();
     return () => removeNewDeviceKey();
   }, [setAdminData, removeNewDeviceKey]);
+
+  const handleRoomSubmit = (input: RoomInput) => {
+    if (editingRoom) {
+      setEditedRoom(editingRoom.id, input);
+      setEditingRoom(null);
+    } else {
+      setNewRoom(input);
+    }
+  };
+
+  const handleDeleteRoom = (room: Room) => {
+    const devicesCount = devices.filter(
+      (device) => device.roomId === room.id,
+    ).length;
+    const isConfirmed = window.confirm(
+      `למחוק את החדר "${room.name}"? יימחקו גם ${devicesCount} המכשירים שלו וכל האירועים שנקלטו בו. אי אפשר לבטל את זה.`,
+    );
+    if (isConfirmed) {
+      removeRoom(room.id);
+    }
+  };
+
+  const handleRevokeDevice = (device: Device) => {
+    const isConfirmed = window.confirm(
+      `לבטל את המפתח של "${device.name}"? המכשיר יפסיק לשלוח אירועים, אבל יישאר ברשימה.`,
+    );
+    if (isConfirmed) {
+      setRevokedDevice(device.id);
+    }
+  };
+
+  const handleDeleteDevice = (device: Device) => {
+    const isConfirmed = window.confirm(
+      `למחוק את המכשיר "${device.name}"? האירועים שהוא שלח יישמרו בחדר.`,
+    );
+    if (isConfirmed) {
+      removeDevice(device.id);
+    }
+  };
 
   return (
     <main className="admin-page">
@@ -31,12 +78,18 @@ const AdminPage = () => {
       <div className="admin-grid">
         <section className="glass panel">
           <h2>חדרים</h2>
-          <ul className="room-chips">
-            {rooms.map((room) => (
-              <li key={room.id}>{room.name}</li>
-            ))}
-          </ul>
-          <RoomForm isLoading={isLoading} onSubmit={setNewRoom} />
+          <RoomsList
+            rooms={rooms}
+            onEdit={setEditingRoom}
+            onDelete={handleDeleteRoom}
+          />
+          <RoomForm
+            key={editingRoom?.id ?? "new"}
+            room={editingRoom}
+            isLoading={isLoading}
+            onSubmit={handleRoomSubmit}
+            onCancel={() => setEditingRoom(null)}
+          />
         </section>
 
         <section className="glass panel">
@@ -47,14 +100,10 @@ const AdminPage = () => {
             onSubmit={setNewDevice}
           />
           {newDeviceKey && (
-            <div className="device-key">
-              <p>
-                זה מפתח המכשיר. הוא מוצג רק עכשיו. מעתיקים אותו לדף ההאזנה
-                במכשיר:
-              </p>
-              <code dir="ltr">{newDeviceKey}</code>
-              <button onClick={removeNewDeviceKey}>העתקתי, הסתר</button>
-            </div>
+            <DeviceKeyBox
+              deviceKey={newDeviceKey}
+              onHide={removeNewDeviceKey}
+            />
           )}
         </section>
 
@@ -64,7 +113,8 @@ const AdminPage = () => {
             <DevicesTable
               devices={devices}
               rooms={rooms}
-              onRevoke={removeDevice}
+              onRevoke={handleRevokeDevice}
+              onDelete={handleDeleteDevice}
             />
           </div>
         </section>

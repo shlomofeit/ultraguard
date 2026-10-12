@@ -102,7 +102,7 @@ export const loginSchema = z.object({
     .min(1, "password is required"),
 });
 
-export const createRoomSchema = z.object({
+export const roomSchema = z.object({
   name: z
     .string("name must be a string")
     .trim()

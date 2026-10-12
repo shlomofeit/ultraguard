@@ -52,15 +52,30 @@ async function createDevice(deviceData) {
   return { device: toDevice(row), deviceKey };
 }
 
+function throwNotFound() {
+  const error = new Error("Device not found!");
+  error.status = 404;
+  throw error;
+}
+
 async function revokeDevice(id) {
   const row = await devicesRepo.updateDevice(id, {
     revoked_at: new Date().toISOString(),
   });
 
   if (!row) {
-    const error = new Error("Device not found!");
-    error.status = 404;
-    throw error;
+    throwNotFound();
+  }
+
+  const device = toDevice(row);
+  return device;
+}
+
+async function deleteDevice(id) {
+  const row = await devicesRepo.deleteDevice(id);
+
+  if (!row) {
+    throwNotFound();
   }
 
   const device = toDevice(row);
@@ -95,6 +110,7 @@ export const devicesService = {
   getDevices,
   createDevice,
   revokeDevice,
+  deleteDevice,
   getDeviceByKey,
   recordHeartbeat,
 };

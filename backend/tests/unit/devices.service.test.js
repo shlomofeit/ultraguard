@@ -10,6 +10,7 @@ vi.mock("../../repositories/devices.repo.js", () => ({
     getDeviceByKeyHash: vi.fn(),
     createDevice: vi.fn(),
     updateDevice: vi.fn(),
+    deleteDevice: vi.fn(),
   },
 }));
 
@@ -35,6 +36,7 @@ describe("devicesService", () => {
     vi.mocked(devicesRepo.getDeviceByKeyHash).mockReset();
     vi.mocked(devicesRepo.createDevice).mockReset();
     vi.mocked(devicesRepo.updateDevice).mockReset();
+    vi.mocked(devicesRepo.deleteDevice).mockReset();
     vi.mocked(roomsRepo.getRoomById).mockReset();
   });
 
@@ -90,6 +92,39 @@ describe("devicesService", () => {
 
     expect(await devicesService.getDeviceByKey("some-key")).toBeNull();
     expect(await devicesService.getDeviceByKey(undefined)).toBeNull();
+  });
+
+  it("revokes a device and keeps it in the list", async () => {
+    vi.mocked(devicesRepo.updateDevice).mockResolvedValue({
+      ...deviceRow,
+      revoked_at: "2026-10-12T09:00:00.000Z",
+    });
+
+    const device = await devicesService.revokeDevice("device-1");
+
+    expect(device.revokedAt).toBe("2026-10-12T09:00:00.000Z");
+    expect(devicesRepo.deleteDevice).not.toHaveBeenCalled();
+  });
+
+  it("deletes a device", async () => {
+    vi.mocked(devicesRepo.deleteDevice).mockResolvedValue(deviceRow);
+
+    const device = await devicesService.deleteDevice("device-1");
+
+    expect(devicesRepo.deleteDevice).toHaveBeenCalledWith("device-1");
+    expect(device.id).toBe("device-1");
+  });
+
+  it("rejects revoking or deleting a missing device with status 404", async () => {
+    vi.mocked(devicesRepo.updateDevice).mockResolvedValue(null);
+    vi.mocked(devicesRepo.deleteDevice).mockResolvedValue(null);
+
+    await expect(devicesService.revokeDevice("nope")).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(devicesService.deleteDevice("nope")).rejects.toMatchObject({
+      status: 404,
+    });
   });
 
   it("rejects a broken heartbeat with status 400", async () => {

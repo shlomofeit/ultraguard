@@ -18,3 +18,17 @@ router.post("/", adminMiddleware, async (req, res) => {
 
   res.status(201).json(room);
 });
+
+router.patch("/:id", adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const room = await roomsService.updateRoom(id, req.body);
+
+  res.json(room);
+});
+
+router.delete("/:id", adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const room = await roomsService.deleteRoom(id);
+
+  res.json(room);
+});

@@ -14,3 +14,20 @@ export const createRoom = async (input: RoomInput): Promise<Room> => {
   });
   return data;
 };
+
+export const updateRoom = async (
+  id: string,
+  input: RoomInput,
+): Promise<Room> => {
+  const { data } = await axios.patch<Room>(`${BASE_URL}/${id}`, input, {
+    withCredentials: true,
+  });
+  return data;
+};
+
+export const deleteRoom = async (id: string): Promise<Room> => {
+  const { data } = await axios.delete<Room>(`${BASE_URL}/${id}`, {
+    withCredentials: true,
+  });
+  return data;
+};

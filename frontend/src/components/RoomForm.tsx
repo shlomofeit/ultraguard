@@ -1,23 +1,32 @@
 import { useState } from "react";
-import type { RoomInput } from "../types/room";
+import type { Room, RoomFormErrors, RoomInput } from "../types/room";
 
 interface RoomFormProps {
+  room: Room | null;
   isLoading: boolean;
   onSubmit: (input: RoomInput) => void;
+  onCancel: () => void;
 }
 
-const RoomForm = ({ isLoading, onSubmit }: RoomFormProps) => {
-  const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
+const validateRoomForm = (values: RoomInput): RoomFormErrors => {
+  const errors: RoomFormErrors = {};
+  if (values.name.trim().length < 2) {
+    errors.name = "שם חדר צריך להכיל לפחות 2 תווים";
+  }
+  return errors;
+};
+
+const RoomForm = ({ room, isLoading, onSubmit, onCancel }: RoomFormProps) => {
+  const [name, setName] = useState(room?.name ?? "");
+  const [errors, setErrors] = useState<RoomFormErrors>({});
 
   const handleSubmit = () => {
-    if (name.trim().length < 2) {
-      setError("שם חדר צריך להכיל לפחות 2 תווים");
-      return;
+    const formErrors = validateRoomForm({ name });
+    setErrors(formErrors);
+    if (Object.keys(formErrors).length === 0) {
+      onSubmit({ name: name.trim() });
+      setName("");
     }
-    setError(null);
-    onSubmit({ name: name.trim() });
-    setName("");
   };
 
   return (
@@ -29,16 +38,23 @@ const RoomForm = ({ isLoading, onSubmit }: RoomFormProps) => {
         handleSubmit();
       }}
     >
-      <label htmlFor="room-name">שם חדר חדש</label>
+      <label htmlFor="room-name">
+        {room ? `שם חדש לחדר "${room.name}"` : "שם חדר חדש"}
+      </label>
       <input
         id="room-name"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      {error && <p className="form-error">{error}</p>}
+      {errors.name && <p className="form-error">{errors.name}</p>}
       <button type="submit" disabled={isLoading}>
-        הוסף חדר
+        {room ? "שמור שם" : "הוסף חדר"}
       </button>
+      {room && (
+        <button type="button" onClick={onCancel}>
+          ביטול
+        </button>
+      )}
     </form>
   );
 };
