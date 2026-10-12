@@ -7,7 +7,7 @@ export const router = express.Router();
 router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
-  const events = await eventsService.getEvents(req.query);
+  const events = await eventsService.getEvents(req.query, req.user);
 
   res.json(events);
 });

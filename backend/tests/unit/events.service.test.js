@@ -1,10 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { eventsService } from '../../services/events.service.js';
 import { eventsRepo } from '../../repositories/events.repo.js';
+import { roomMembersRepo } from '../../repositories/roomMembers.repo.js';
 
 vi.mock('../../repositories/events.repo.js', () => ({
   eventsRepo: { createEvent: vi.fn(), getEvents: vi.fn() },
 }));
+
+vi.mock('../../repositories/roomMembers.repo.js', () => ({
+  roomMembersRepo: { getRoomIdsByUser: vi.fn() },
+}));
+
+const ROOM_A = '1a1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
+const ROOM_B = '2b1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
+const admin = { id: 'admin-1', role: 'admin' };
+const viewer = { id: 'viewer-1', role: 'viewer' };
 
 const device = { id: 'device-1', roomId: 'room-1' };
 
@@ -65,7 +75,7 @@ describe('eventsService.getEvents', () => {
   it('uses a limit of 50 when none is given', async () => {
     vi.mocked(eventsRepo.getEvents).mockResolvedValue([]);
 
-    await eventsService.getEvents({});
+    await eventsService.getEvents({}, admin);
 
     const filter = vi.mocked(eventsRepo.getEvents).mock.calls[0][0];
     expect(filter.limit).toBe(50);
@@ -74,7 +84,7 @@ describe('eventsService.getEvents', () => {
   it('passes only the allowed fields to the repository', async () => {
     vi.mocked(eventsRepo.getEvents).mockResolvedValue([]);
 
-    await eventsService.getEvents({ limit: '10', hack: '1' });
+    await eventsService.getEvents({ limit: '10', hack: '1' }, admin);
 
     const filter = vi.mocked(eventsRepo.getEvents).mock.calls[0][0];
     expect(filter).toEqual({ limit: 10 });
@@ -82,7 +92,7 @@ describe('eventsService.getEvents', () => {
 
   it('rejects a limit above 200 with status 400', async () => {
     await expect(
-      eventsService.getEvents({ limit: '500' })
+      eventsService.getEvents({ limit: '500' }, admin)
     ).rejects.toMatchObject({ status: 400 });
     expect(eventsRepo.getEvents).not.toHaveBeenCalled();
   });
@@ -92,10 +102,29 @@ describe('eventsService.getEvents', () => {
       { id: validEvent.id, room_id: 'room-1', peak_freq_hz: 18000 },
     ]);
 
-    const [event] = await eventsService.getEvents({});
+    const [event] = await eventsService.getEvents({}, admin);
 
     expect(event.roomId).toBe('room-1');
     expect(event.peakFreqHz).toBe(18000);
     expect(event).not.toHaveProperty('room_id');
+  });
+
+  it('limits a viewer to the rooms given to them', async () => {
+    vi.mocked(roomMembersRepo.getRoomIdsByUser).mockResolvedValue([ROOM_A]);
+    vi.mocked(eventsRepo.getEvents).mockResolvedValue([]);
+
+    await eventsService.getEvents({}, viewer);
+
+    const filter = vi.mocked(eventsRepo.getEvents).mock.calls[0][0];
+    expect(filter.roomIds).toEqual([ROOM_A]);
+  });
+
+  it('rejects a viewer asking for another room with status 403', async () => {
+    vi.mocked(roomMembersRepo.getRoomIdsByUser).mockResolvedValue([ROOM_A]);
+
+    await expect(
+      eventsService.getEvents({ roomId: ROOM_B }, viewer)
+    ).rejects.toMatchObject({ status: 403 });
+    expect(eventsRepo.getEvents).not.toHaveBeenCalled();
   });
 });

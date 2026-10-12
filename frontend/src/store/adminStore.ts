@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Room, RoomInput } from "../types/room";
 import type { Device, DeviceInput } from "../types/device";
+import type { ManagedUser, UserRole } from "../types/user";
 import {
   createRoom,
   deleteRoom,
@@ -13,11 +14,13 @@ import {
   getDevices,
   revokeDevice,
 } from "../api/devices.api";
+import { getUsers, updateUserRole, updateUserRooms } from "../api/users.api";
 import { getErrorDetails } from "../utils/getErrorDetails";
 
 interface AdminStore {
   rooms: Room[];
   devices: Device[];
+  users: ManagedUser[];
   newDeviceKey: string | null;
   isLoading: boolean;
   error: string | null;
@@ -29,11 +32,14 @@ interface AdminStore {
   setRevokedDevice: (id: string) => void;
   removeDevice: (id: string) => void;
   removeNewDeviceKey: () => void;
+  setUserRooms: (id: string, roomIds: string[]) => void;
+  setUserRole: (id: string, role: UserRole) => void;
 }
 
 export const useAdminStore = create<AdminStore>((set) => ({
   rooms: [],
   devices: [],
+  users: [],
   newDeviceKey: null,
   isLoading: false,
   error: null,
@@ -41,8 +47,12 @@ export const useAdminStore = create<AdminStore>((set) => ({
   setAdminData: async () => {
     set({ isLoading: true, error: null });
     try {
-      const [rooms, devices] = await Promise.all([getRooms(), getDevices()]);
-      set({ rooms, devices, isLoading: false });
+      const [rooms, devices, users] = await Promise.all([
+        getRooms(),
+        getDevices(),
+        getUsers(),
+      ]);
+      set({ rooms, devices, users, isLoading: false });
     } catch (err) {
       set({
         isLoading: false,
@@ -87,6 +97,10 @@ export const useAdminStore = create<AdminStore>((set) => ({
       set((state) => ({
         rooms: state.rooms.filter((room) => room.id !== id),
         devices: state.devices.filter((device) => device.roomId !== id),
+        users: state.users.map((user) => ({
+          ...user,
+          roomIds: user.roomIds.filter((roomId) => roomId !== id),
+        })),
       }));
     } catch (err) {
       set({ error: getErrorDetails(err, "לא הצלחתי למחוק את החדר") });
@@ -137,4 +151,28 @@ export const useAdminStore = create<AdminStore>((set) => ({
   },
 
   removeNewDeviceKey: () => set({ newDeviceKey: null }),
+
+  setUserRooms: async (id, roomIds) => {
+    set({ error: null });
+    try {
+      const updated = await updateUserRooms(id, roomIds);
+      set((state) => ({
+        users: state.users.map((user) => (user.id === id ? updated : user)),
+      }));
+    } catch (err) {
+      set({ error: getErrorDetails(err, "לא הצלחתי לעדכן את החדרים") });
+    }
+  },
+
+  setUserRole: async (id, role) => {
+    set({ error: null });
+    try {
+      const updated = await updateUserRole(id, role);
+      set((state) => ({
+        users: state.users.map((user) => (user.id === id ? updated : user)),
+      }));
+    } catch (err) {
+      set({ error: getErrorDetails(err, "לא הצלחתי לשנות את התפקיד") });
+    }
+  },
 }));

@@ -1045,6 +1045,12 @@ button.primary:hover {
   font-size: 0.75rem;
 }
 
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;

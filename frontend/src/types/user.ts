@@ -17,6 +17,10 @@ export interface User {
   createdAt: string;
 }
 
+export interface ManagedUser extends User {
+  roomIds: string[];
+}
+
 export interface AuthFormErrors {
   name?: string;
   email?: string;

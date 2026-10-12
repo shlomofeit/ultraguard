@@ -7,6 +7,7 @@ import { router as authRouter } from "./routes/auth.routes.js";
 import { router as devicesRouter } from "./routes/devices.routes.js";
 import { router as eventsRouter } from "./routes/events.routes.js";
 import { router as roomsRouter } from "./routes/rooms.routes.js";
+import { router as usersRouter } from "./routes/users.routes.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/devices", devicesRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/rooms", roomsRouter);
+app.use("/api/users", usersRouter);
 
 app.use((req, res) => {
   res

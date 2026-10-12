@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { roomsService } from "../../services/rooms.service.js";
 import { roomsRepo } from "../../repositories/rooms.repo.js";
+import { roomMembersRepo } from "../../repositories/roomMembers.repo.js";
 
 vi.mock("../../repositories/rooms.repo.js", () => ({
   roomsRepo: {
@@ -11,6 +12,13 @@ vi.mock("../../repositories/rooms.repo.js", () => ({
     deleteRoom: vi.fn(),
   },
 }));
+
+vi.mock("../../repositories/roomMembers.repo.js", () => ({
+  roomMembersRepo: { getRoomIdsByUser: vi.fn() },
+}));
+
+const admin = { id: "admin-1", role: "admin" };
+const viewer = { id: "viewer-1", role: "viewer" };
 
 const roomRow = {
   id: "room-1",
@@ -24,6 +32,38 @@ describe("roomsService", () => {
     vi.mocked(roomsRepo.createRoom).mockReset();
     vi.mocked(roomsRepo.updateRoom).mockReset();
     vi.mocked(roomsRepo.deleteRoom).mockReset();
+  });
+
+  it("shows every room to an admin", async () => {
+    vi.mocked(roomsRepo.getRooms).mockResolvedValue([
+      roomRow,
+      { ...roomRow, id: "room-2" },
+    ]);
+
+    const rooms = await roomsService.getRooms(admin);
+
+    expect(rooms).toHaveLength(2);
+    expect(roomMembersRepo.getRoomIdsByUser).not.toHaveBeenCalled();
+  });
+
+  it("shows a viewer only the rooms given to them", async () => {
+    vi.mocked(roomsRepo.getRooms).mockResolvedValue([
+      roomRow,
+      { ...roomRow, id: "room-2" },
+    ]);
+    vi.mocked(roomMembersRepo.getRoomIdsByUser).mockResolvedValue(["room-2"]);
+
+    const rooms = await roomsService.getRooms(viewer);
+
+    expect(rooms.map((room) => room.id)).toEqual(["room-2"]);
+  });
+
+  it("checks if a user can watch a room", async () => {
+    vi.mocked(roomMembersRepo.getRoomIdsByUser).mockResolvedValue(["room-1"]);
+
+    expect(await roomsService.canAccessRoom(admin, "room-9")).toBe(true);
+    expect(await roomsService.canAccessRoom(viewer, "room-1")).toBe(true);
+    expect(await roomsService.canAccessRoom(viewer, "room-9")).toBe(false);
   });
 
   it("creates a room with a free name", async () => {

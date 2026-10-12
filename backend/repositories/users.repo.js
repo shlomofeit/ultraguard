@@ -42,4 +42,38 @@ async function createUser(row) {
   return data;
 }
 
-export const usersRepo = { getUserByEmail, getUserById, createUser };
+async function getUsers() {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('name');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+async function updateUser(id, changes) {
+  const { data, error } = await supabase
+    .from('users')
+    .update(changes)
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export const usersRepo = {
+  getUserByEmail,
+  getUserById,
+  createUser,
+  getUsers,
+  updateUser,
+};

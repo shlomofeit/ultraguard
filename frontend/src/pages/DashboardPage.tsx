@@ -75,6 +75,9 @@ const DashboardPage = () => {
       </div>
 
       {error && <p className="form-error">{error}</p>}
+      {!isLoading && rooms.length === 0 && (
+        <p className="empty">עוד לא הוקצו לך חדרים. אפשר לבקש מהמנהל.</p>
+      )}
 
       <div className="stats">
         <StatCard

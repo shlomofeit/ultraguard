@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useAdminStore } from "../store/adminStore";
+import { useAuthStore } from "../store/authStore";
 import type { Room, RoomInput } from "../types/room";
 import type { Device } from "../types/device";
+import type { ManagedUser, UserRole } from "../types/user";
 import RoomForm from "../components/RoomForm";
 import RoomsList from "../components/RoomsList";
 import DeviceForm from "../components/DeviceForm";
 import DeviceKeyBox from "../components/DeviceKeyBox";
 import DevicesTable from "../components/DevicesTable";
+import UsersTable from "../components/UsersTable";
 
 const AdminPage = () => {
   const rooms = useAdminStore((state) => state.rooms);
@@ -22,6 +25,10 @@ const AdminPage = () => {
   const setRevokedDevice = useAdminStore((state) => state.setRevokedDevice);
   const removeDevice = useAdminStore((state) => state.removeDevice);
   const removeNewDeviceKey = useAdminStore((state) => state.removeNewDeviceKey);
+  const users = useAdminStore((state) => state.users);
+  const setUserRooms = useAdminStore((state) => state.setUserRooms);
+  const setUserRole = useAdminStore((state) => state.setUserRole);
+  const currentUser = useAuthStore((state) => state.user);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
 
   useEffect(() => {
@@ -65,6 +72,20 @@ const AdminPage = () => {
     );
     if (isConfirmed) {
       removeDevice(device.id);
+    }
+  };
+
+  const handleRoomsChange = (user: ManagedUser, roomIds: string[]) => {
+    setUserRooms(user.id, roomIds);
+  };
+
+  const handleRoleChange = (user: ManagedUser, role: UserRole) => {
+    const roleName = role === "admin" ? "מנהל" : "צופה";
+    const isConfirmed = window.confirm(
+      `להפוך את "${user.name}" ל${roleName}?`,
+    );
+    if (isConfirmed) {
+      setUserRole(user.id, role);
     }
   };
 
@@ -115,6 +136,22 @@ const AdminPage = () => {
               rooms={rooms}
               onRevoke={handleRevokeDevice}
               onDelete={handleDeleteDevice}
+            />
+          </div>
+        </section>
+
+        <section className="glass panel wide">
+          <h2>משתמשים והרשאות</h2>
+          <p className="note">
+            מנהל רואה את כל החדרים. צופה רואה רק את החדרים שמסומנים לו.
+          </p>
+          <div className="table-scroll">
+            <UsersTable
+              users={users}
+              rooms={rooms}
+              currentUserId={currentUser?.id ?? ""}
+              onRoomsChange={handleRoomsChange}
+              onRoleChange={handleRoleChange}
             />
           </div>
         </section>
