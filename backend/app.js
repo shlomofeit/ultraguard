@@ -4,6 +4,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { router as authRouter } from "./routes/auth.routes.js";
+import { router as devicesRouter } from "./routes/devices.routes.js";
 import { router as eventsRouter } from "./routes/events.routes.js";
 import { router as roomsRouter } from "./routes/rooms.routes.js";
 
@@ -19,6 +20,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/devices", devicesRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/rooms", roomsRouter);
 
