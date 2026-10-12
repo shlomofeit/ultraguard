@@ -2,11 +2,13 @@ import { create } from "zustand";
 import { io } from "socket.io-client";
 import { startCapture, type Capture } from "../listener/capture";
 import { createSender, type Sender } from "../listener/sender";
+import { createSuspicionTracker } from "../listener/suspicion";
 import { getErrorDetails } from "../utils/getErrorDetails";
 import {
   createPipeline,
   toEventInput,
-  type PipelineDetection,
+  toSighting,
+  type CheckedDetection,
 } from "../listener/pipeline";
 
 const LISTENER_URL = `${import.meta.env.VITE_API_URL}/listener`;
@@ -29,7 +31,7 @@ interface ListenerStore {
   error: string | null;
   sampleRate: number | null;
   startedAtMs: number | null;
-  detections: PipelineDetection[];
+  detections: CheckedDetection[];
   isConnected: boolean;
   queueSize: number;
   isRejected: boolean;
@@ -73,6 +75,7 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
     try {
       let pipeline: ReturnType<typeof createPipeline> | null = null;
       const startedAtMs = Date.now();
+      const tracker = createSuspicionTracker();
       sender = createSender(
         io(LISTENER_URL, { auth: { deviceKey } }),
         (status) => set(status),
@@ -82,10 +85,16 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
         if (!detection || !capture) {
           return;
         }
+        const suspicion = detection.isBeacon
+          ? tracker.check(toSighting(detection))
+          : null;
         set((state) => ({
-          detections: [detection, ...state.detections].slice(0, MAX_DETECTIONS),
+          detections: [{ ...detection, suspicion }, ...state.detections].slice(
+            0,
+            MAX_DETECTIONS,
+          ),
         }));
-        if (detection.isBeacon) {
+        if (suspicion) {
           sender?.sendEvent(
             toEventInput(detection, startedAtMs, capture.sampleRate),
           );

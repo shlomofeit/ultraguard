@@ -1,12 +1,13 @@
 import { EVENT_TYPE_LABELS } from "../utils/eventTypeLabels";
-import { getDetectionType, type PipelineDetection } from "../listener/pipeline";
+import { SUSPICION_LABELS } from "../utils/suspicionLabels";
+import { getDetectionType, type CheckedDetection } from "../listener/pipeline";
 
 interface DetectionListProps {
-  detections: PipelineDetection[];
+  detections: CheckedDetection[];
   startedAtMs: number;
 }
 
-const getTypeLabel = (detection: PipelineDetection) => {
+const getTypeLabel = (detection: CheckedDetection) => {
   const { type, confidence } = getDetectionType(detection);
   if (type === "noise") {
     return EVENT_TYPE_LABELS.noise;
@@ -32,6 +33,7 @@ const DetectionList = ({ detections, startedAtMs }: DetectionListProps) => {
           <th>משך</th>
           <th>SNR</th>
           <th>תוכן</th>
+          <th>סטטוס</th>
         </tr>
       </thead>
       <tbody>
@@ -44,6 +46,11 @@ const DetectionList = ({ detections, startedAtMs }: DetectionListProps) => {
             <td dir="ltr">{Math.round(detection.durationMs)} ms</td>
             <td dir="ltr">{detection.maxSnrDb.toFixed(0)} dB</td>
             <td dir="auto">{detection.payload ?? "–"}</td>
+            <td>
+              {detection.suspicion
+                ? SUSPICION_LABELS[detection.suspicion]
+                : "נבדק, לא חשוד"}
+            </td>
           </tr>
         ))}
       </tbody>
