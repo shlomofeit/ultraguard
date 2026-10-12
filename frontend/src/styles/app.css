@@ -235,6 +235,29 @@ code {
   font-weight: 600;
 }
 
+.listening-bar {
+  position: fixed;
+  bottom: 1rem;
+  inset-inline-end: 1rem;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-small);
+  background: var(--screen);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.6);
+  font-size: 0.85rem;
+}
+
+.listening-bar button {
+  padding: 0.3rem 0.8rem;
+  color: var(--danger);
+  border-color: rgb(255 122 122 / 0.3);
+}
+
 /* =========================================================
    4. Glass panels and page header
    ========================================================= */
