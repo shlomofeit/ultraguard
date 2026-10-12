@@ -10,7 +10,7 @@ const ProtectedRoute = ({ adminOnly }: ProtectedRouteProps) => {
   const isChecked = useAuthStore((state) => state.isChecked);
 
   if (!isChecked) {
-    return <p>טוען...</p>;
+    return <p className="page-loading">טוען...</p>;
   }
   if (!user) {
     return <Navigate to="/login" replace />;

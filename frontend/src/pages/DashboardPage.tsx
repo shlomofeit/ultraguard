@@ -1,9 +1,14 @@
 import { useEffect } from "react";
 import { useEventsStore } from "../store/eventsStore";
 import EventsTable from "../components/EventsTable";
-import { useAuthStore } from "../store/authStore";
 import EventsFilterBar from "../components/EventFilterBar";
-import EventsChart from "../components/EventsChart";
+import StatCard from "../components/StatCard";
+import Waterfall from "../components/Waterfall";
+import TypeBars from "../components/TypeBars";
+import { countRecentEvents } from "../utils/eventFilter";
+import { EVENT_TYPE_LABELS } from "../utils/eventTypeLabels";
+
+const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("he-IL");
 
 const DashboardPage = () => {
   const rooms = useEventsStore((state) => state.rooms);
@@ -12,12 +17,10 @@ const DashboardPage = () => {
   const isLive = useEventsStore((state) => state.isLive);
   const isLoading = useEventsStore((state) => state.isLoading);
   const error = useEventsStore((state) => state.error);
+  const filter = useEventsStore((state) => state.filter);
   const setRooms = useEventsStore((state) => state.setRooms);
   const setSelectedRoom = useEventsStore((state) => state.setSelectedRoom);
   const setStopLive = useEventsStore((state) => state.setStopLive);
-  const user = useAuthStore((state) => state.user);
-  const setLogout = useAuthStore((state) => state.setLogout);
-  const filter = useEventsStore((state) => state.filter);
   const setFilter = useEventsStore((state) => state.setFilter);
 
   useEffect(() => {
@@ -25,43 +28,102 @@ const DashboardPage = () => {
     return () => setStopLive();
   }, [setRooms, setStopLive]);
 
-  const handleRoomChange = (roomId: string) => {
-    setSelectedRoom(roomId);
-  };
+  const roomName = rooms.find((room) => room.id === selectedRoomId)?.name;
+  const lastEvent = events[0];
+  const lastPayload = events.find((event) => event.payload)?.payload;
+  const trend = countRecentEvents(events, Date.now());
+  const lastHourCount = trend.reduce((sum, count) => sum + count, 0);
+  const averageConfidence =
+    events.length > 0
+      ? events.reduce((sum, event) => sum + event.confidence, 0) / events.length
+      : null;
 
   return (
     <main className="dashboard-page">
-      <header className="app-header">
-        <h1>דשבורד</h1>
-        <p>שלום, {user?.name}</p>
-        <button onClick={setLogout}>התנתק</button>
+      <header className="page-head">
+        <h1>{roomName ?? "דשבורד"}</h1>
+        <span className={isLive ? "live on" : "live"}>
+          <span className="live-dot" />
+          {isLive ? "מאזין לחדר בזמן אמת" : "אין חיבור לשרת"}
+        </span>
       </header>
 
-      <label htmlFor="room-select">חדר</label>
-      <select
-        id="room-select"
-        value={selectedRoomId ?? ""}
-        onChange={(e) => handleRoomChange(e.target.value)}
-      >
-        {rooms.map((room) => (
-          <option key={room.id} value={room.id}>
-            {room.name}
-          </option>
-        ))}
-      </select>
+      <div className="toolbar">
+        <label htmlFor="room-select">חדר</label>
+        <select
+          id="room-select"
+          value={selectedRoomId ?? ""}
+          onChange={(e) => setSelectedRoom(e.target.value)}
+        >
+          {rooms.map((room) => (
+            <option key={room.id} value={room.id}>
+              {room.name}
+            </option>
+          ))}
+        </select>
+        <EventsFilterBar filter={filter} onChange={setFilter} />
+      </div>
 
-      <EventsFilterBar filter={filter} onChange={setFilter} />
-
-      <p>{isLive ? "מחובר, אירועים חדשים יופיעו כאן" : "אין חיבור לשרת"}</p>
       {error && <p className="form-error">{error}</p>}
-      {isLoading ? (
-        <p>טוען...</p>
-      ) : (
-        <>
-          <EventsChart events={events} />
-          <EventsTable events={events} />
-        </>
-      )}
+
+      <div className="stats">
+        <StatCard
+          label="אירועים בשעה האחרונה"
+          value={String(lastHourCount)}
+          note={`מתוך ${events.length} בטווח שנבחר`}
+          trend={trend}
+          isHot
+        />
+        <StatCard
+          label="האחרון"
+          value={
+            lastEvent ? `${(lastEvent.peakFreqHz / 1000).toFixed(1)} kHz` : "–"
+          }
+          note={
+            lastEvent
+              ? `${EVENT_TYPE_LABELS[lastEvent.type]} · ${formatTime(lastEvent.startedAt)}`
+              : "ממתין לאירוע"
+          }
+        />
+        <StatCard
+          label="תוכן שפוענח"
+          value={lastPayload ?? "–"}
+          note="הטקסט האחרון שביקון נשא"
+        />
+        <StatCard
+          label="ביטחון ממוצע"
+          value={
+            averageConfidence === null
+              ? "–"
+              : `${Math.round(averageConfidence * 100)}%`
+          }
+          note="כמה המסווג בטוח בזיהוי"
+        />
+      </div>
+
+      <section className="glass panel">
+        <div className="panel-head">
+          <h2>מפל תדרים</h2>
+          <small>כל הבזק הוא אירוע חדש. הזמן זורם למטה.</small>
+        </div>
+        <Waterfall events={events} />
+      </section>
+
+      <div className="columns">
+        <section className="glass panel">
+          <h2>אירועים</h2>
+          {isLoading ? (
+            <p className="empty">טוען...</p>
+          ) : (
+            <EventsTable events={events} />
+          )}
+        </section>
+        <section className="glass panel">
+          <h2>לפי סוג</h2>
+          <TypeBars events={events} />
+          <p className="note">מתעדכן עם כל אירוע שנכנס.</p>
+        </section>
+      </div>
     </main>
   );
 };

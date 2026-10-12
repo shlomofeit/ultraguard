@@ -1,16 +1,16 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { usersRepo } from '../repositories/users.repo.js';
-import { generateToken } from '../utils/generateToken.js';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { usersRepo } from "../repositories/users.repo.js";
+import { generateToken } from "../utils/generateToken.js";
 import {
   loginSchema,
   registerSchema,
   validateSchema,
-} from '../utils/validation.js';
+} from "../utils/validation.js";
 
 const SALT_ROUNDS = 12;
-const ACCESS_EXPIRES_IN = '15m';
-const REFRESH_EXPIRES_IN = '7d';
+const ACCESS_EXPIRES_IN = "15m";
+const REFRESH_EXPIRES_IN = "7d";
 
 function toUser(row) {
   const user = {
@@ -44,7 +44,7 @@ async function register(userData) {
   const existingUser = await usersRepo.getUserByEmail(email);
 
   if (existingUser) {
-    const error = new Error('Email is already taken!');
+    const error = new Error("Email is already taken!");
     error.status = 409;
     throw error;
   }
@@ -66,7 +66,7 @@ async function login(loginData) {
   const isMatch = row && (await bcrypt.compare(password, row.password_hash));
 
   if (!isMatch) {
-    throwUnauthorized('Invalid email or password!');
+    throwUnauthorized("Invalid email or password!");
   }
 
   const user = toUser(row);
@@ -75,20 +75,20 @@ async function login(loginData) {
 
 async function getUserFromToken(token) {
   if (!token) {
-    throwUnauthorized('Not logged in!');
+    throwUnauthorized("Not logged in!");
   }
 
   let payload;
   try {
-    payload = jwt.verify(token, process.env.TOKEN_SECRET_KEY);
+    payload = jwt.verify(token, process.env.SECRET_KEY);
   } catch {
-    throwUnauthorized('Session expired, please log in again!');
+    throwUnauthorized("Session expired, please log in again!");
   }
 
   const row = await usersRepo.getUserById(payload.userId);
 
   if (!row) {
-    throwUnauthorized('User not found!');
+    throwUnauthorized("User not found!");
   }
 
   const user = toUser(row);

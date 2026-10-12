@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   countEventsByType,
+  countRecentEvents,
   getFromDate,
   matchesFilter,
 } from "../../src/utils/eventFilter";
@@ -58,5 +59,19 @@ describe("event filter", () => {
     expect(counts.get("tone")).toBe(2);
     expect(counts.get("chirp")).toBe(1);
     expect(counts.get("lisnr")).toBeUndefined();
+  });
+
+  it("puts events of the last hour into 5-minute buckets", () => {
+    const events = [
+      makeEvent("lisnr", "2026-10-11T11:59:00.000Z"),
+      makeEvent("lisnr", "2026-10-11T11:58:00.000Z"),
+      makeEvent("tone", "2026-10-11T11:03:00.000Z"),
+      makeEvent("tone", "2026-10-11T10:30:00.000Z"),
+    ];
+    const buckets = countRecentEvents(events, NOW_MS);
+    expect(buckets).toHaveLength(12);
+    expect(buckets[11]).toBe(2);
+    expect(buckets[0]).toBe(1);
+    expect(buckets.reduce((sum, count) => sum + count, 0)).toBe(3);
   });
 });
