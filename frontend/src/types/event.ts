@@ -23,7 +23,7 @@ export interface EventInput {
 }
 
 export interface Event extends EventInput {
-  deviceId: string;
+  deviceId: string | null;
   roomId: string;
   receivedAt: string;
   isKnownSource: boolean;

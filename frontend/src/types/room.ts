@@ -12,3 +12,7 @@ export interface RoomStatus {
 export interface RoomInput {
   name: string;
 }
+
+export interface RoomFormErrors {
+  name?: string;
+}

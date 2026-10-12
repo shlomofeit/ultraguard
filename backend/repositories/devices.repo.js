@@ -56,9 +56,25 @@ async function updateDevice(id, changes) {
   return data;
 }
 
+async function deleteDevice(id) {
+  const { data, error } = await supabase
+    .from("devices")
+    .delete()
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 export const devicesRepo = {
   getDevices,
   getDeviceByKeyHash,
   createDevice,
   updateDevice,
+  deleteDevice,
 };

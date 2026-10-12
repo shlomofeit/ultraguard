@@ -19,9 +19,16 @@ router.post("/", async (req, res) => {
   res.status(201).json(created);
 });
 
-router.delete("/:id", async (req, res) => {
+router.patch("/:id/revoke", async (req, res) => {
   const { id } = req.params;
   const device = await devicesService.revokeDevice(id);
+
+  res.json(device);
+});
+
+router.delete("/:id", async (req, res) => {
+  const { id } = req.params;
+  const device = await devicesService.deleteDevice(id);
 
   res.json(device);
 });

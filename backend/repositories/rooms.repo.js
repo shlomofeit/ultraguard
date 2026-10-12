@@ -55,4 +55,41 @@ async function createRoom(row) {
   return data;
 }
 
-export const roomsRepo = { getRooms, getRoomById, getRoomByName, createRoom };
+async function updateRoom(id, changes) {
+  const { data, error } = await supabase
+    .from("rooms")
+    .update(changes)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+async function deleteRoom(id) {
+  const { data, error } = await supabase
+    .from("rooms")
+    .delete()
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export const roomsRepo = {
+  getRooms,
+  getRoomById,
+  getRoomByName,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+};
