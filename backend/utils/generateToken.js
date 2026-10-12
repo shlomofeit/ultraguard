@@ -1,7 +1,7 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 export function generateToken(userId, expiresIn) {
-  const token = jwt.sign({ userId }, process.env.TOKEN_SECRET_KEY, {
+  const token = jwt.sign({ userId }, process.env.SECRET_KEY, {
     expiresIn,
   });
   return token;
