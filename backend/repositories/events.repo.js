@@ -23,6 +23,9 @@ async function getEvents(filter) {
   if (filter.roomId) {
     query = query.eq('room_id', filter.roomId);
   }
+  if (filter.roomIds) {
+    query = query.in('room_id', filter.roomIds);
+  }
   if (filter.type) {
     query = query.eq('type', filter.type);
   }

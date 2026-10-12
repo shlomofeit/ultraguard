@@ -1,4 +1,5 @@
 import { roomsRepo } from "../repositories/rooms.repo.js";
+import { roomMembersRepo } from "../repositories/roomMembers.repo.js";
 import { roomSchema, validateSchema } from "../utils/validation.js";
 
 function toRoom(row) {
@@ -11,9 +12,29 @@ function toRoom(row) {
   return room;
 }
 
-async function getRooms() {
+async function getAllowedRoomIds(user) {
+  if (user.role === "admin") {
+    return null;
+  }
+
+  const roomIds = await roomMembersRepo.getRoomIdsByUser(user.id);
+  return roomIds;
+}
+
+async function canAccessRoom(user, roomId) {
+  const allowedRoomIds = await getAllowedRoomIds(user);
+
+  return allowedRoomIds === null || allowedRoomIds.includes(roomId);
+}
+
+async function getRooms(user) {
   const rows = await roomsRepo.getRooms();
-  const rooms = rows.map((row) => toRoom(row));
+  const allowedRoomIds = await getAllowedRoomIds(user);
+  const visibleRows =
+    allowedRoomIds === null
+      ? rows
+      : rows.filter((row) => allowedRoomIds.includes(row.id));
+  const rooms = visibleRows.map((row) => toRoom(row));
 
   return rooms;
 }
@@ -69,4 +90,11 @@ async function deleteRoom(id) {
   return room;
 }
 
-export const roomsService = { getRooms, createRoom, updateRoom, deleteRoom };
+export const roomsService = {
+  getAllowedRoomIds,
+  canAccessRoom,
+  getRooms,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+};

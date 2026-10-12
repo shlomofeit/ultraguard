@@ -13,6 +13,8 @@ export const EVENT_TYPES = [
 export const AUDIO_STATES = ["running", "suspended", "closed"];
 export const DEVICE_KINDS = ["browser", "python"];
 
+export const USER_ROLES = ["admin", "viewer"];
+
 const MIN_FREQ_HZ = 10000;
 const MAX_FREQ_HZ = 24000;
 const MAX_DURATION_MS = 60000;
@@ -108,6 +110,14 @@ export const roomSchema = z.object({
     .trim()
     .min(2, "name must be at least 2 characters")
     .max(50, "name must be at most 50 characters"),
+});
+
+export const userRoomsSchema = z.object({
+  roomIds: z.array(z.uuid("every room id must be a valid UUID"), "roomIds must be a list"),
+});
+
+export const userRoleSchema = z.object({
+  role: z.enum(USER_ROLES, "role must be admin or viewer"),
 });
 
 export const createDeviceSchema = z.object({

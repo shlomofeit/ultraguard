@@ -8,7 +8,7 @@ export const router = express.Router();
 router.use(authMiddleware);
 
 router.get("/", async (req, res) => {
-  const rooms = await roomsService.getRooms();
+  const rooms = await roomsService.getRooms(req.user);
 
   res.json(rooms);
 });

@@ -5,6 +5,7 @@ import {
 } from '../utils/socketEvents.js';
 import { authService } from '../services/auth.service.js';
 import { presenceService } from '../services/presence.service.js';
+import { roomsService } from '../services/rooms.service.js';
 import { readCookie } from '../utils/readCookie.js';
 
 export function registerLiveSocket(io) {
@@ -21,7 +22,20 @@ export function registerLiveSocket(io) {
   });
 
   viewers.on('connection', (socket) => {
-    socket.on(LIVE_WATCH, (roomId) => {
+    socket.on(LIVE_WATCH, async (roomId) => {
+      try {
+        const canWatch = await roomsService.canAccessRoom(
+          socket.data.user,
+          roomId,
+        );
+        if (!canWatch) {
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+
       socket.join(`room:${roomId}`);
       socket.emit(
         LIVE_ROOM_STATUS,

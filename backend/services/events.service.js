@@ -1,4 +1,5 @@
 import { eventsRepo } from '../repositories/events.repo.js';
+import { roomsService } from './rooms.service.js';
 import {
   createEventSchema,
   validateSchema,
@@ -58,8 +59,19 @@ async function createEvent(eventData, device) {
   return savedEvent;
 }
 
-async function getEvents(query) {
+async function getEvents(query, user) {
   const filter = validateSchema(getEventsSchema, query);
+  const allowedRoomIds = await roomsService.getAllowedRoomIds(user);
+
+  if (allowedRoomIds !== null) {
+    if (filter.roomId && !allowedRoomIds.includes(filter.roomId)) {
+      const error = new Error("You don't have access to this room!");
+      error.status = 403;
+      throw error;
+    }
+    filter.roomIds = allowedRoomIds;
+  }
+
   const rows = await eventsRepo.getEvents(filter);
   const events = rows.map((row) => toEvent(row));
 
