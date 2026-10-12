@@ -23,41 +23,52 @@ const AdminPage = () => {
 
   return (
     <main className="admin-page">
-      <h1>ניהול חדרים ומכשירים</h1>
+      <header className="page-head">
+        <h1>ניהול חדרים ומכשירים</h1>
+      </header>
       {error && <p className="form-error">{error}</p>}
 
-      <section>
-        <h2>חדרים</h2>
-        <ul>
-          {rooms.map((room) => (
-            <li key={room.id}>{room.name}</li>
-          ))}
-        </ul>
-        <RoomForm isLoading={isLoading} onSubmit={setNewRoom} />
-      </section>
+      <div className="admin-grid">
+        <section className="glass panel">
+          <h2>חדרים</h2>
+          <ul className="room-chips">
+            {rooms.map((room) => (
+              <li key={room.id}>{room.name}</li>
+            ))}
+          </ul>
+          <RoomForm isLoading={isLoading} onSubmit={setNewRoom} />
+        </section>
 
-      <section>
-        <h2>מכשיר חדש</h2>
-        <DeviceForm
-          rooms={rooms}
-          isLoading={isLoading}
-          onSubmit={setNewDevice}
-        />
-        {newDeviceKey && (
-          <div className="device-key">
-            <p>
-              זה מפתח המכשיר. הוא מוצג רק עכשיו. מעתיקים אותו לדף ההאזנה במכשיר:
-            </p>
-            <code dir="ltr">{newDeviceKey}</code>
-            <button onClick={removeNewDeviceKey}>העתקתי, הסתר</button>
+        <section className="glass panel">
+          <h2>מכשיר חדש</h2>
+          <DeviceForm
+            rooms={rooms}
+            isLoading={isLoading}
+            onSubmit={setNewDevice}
+          />
+          {newDeviceKey && (
+            <div className="device-key">
+              <p>
+                זה מפתח המכשיר. הוא מוצג רק עכשיו. מעתיקים אותו לדף ההאזנה
+                במכשיר:
+              </p>
+              <code dir="ltr">{newDeviceKey}</code>
+              <button onClick={removeNewDeviceKey}>העתקתי, הסתר</button>
+            </div>
+          )}
+        </section>
+
+        <section className="glass panel wide">
+          <h2>מכשירים</h2>
+          <div className="table-scroll">
+            <DevicesTable
+              devices={devices}
+              rooms={rooms}
+              onRevoke={removeDevice}
+            />
           </div>
-        )}
-      </section>
-
-      <section>
-        <h2>מכשירים</h2>
-        <DevicesTable devices={devices} rooms={rooms} onRevoke={removeDevice} />
-      </section>
+        </section>
+      </div>
     </main>
   );
 };

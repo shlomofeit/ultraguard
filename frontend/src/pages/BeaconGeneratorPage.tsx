@@ -71,50 +71,62 @@ const BeaconGeneratorPage = () => {
 
   return (
     <main className="beacon-page">
-      <h1>מחולל ביקונים</h1>
-      <p>הגבר את עוצמת המדיה, ופתח את המקלט במכשיר אחר.</p>
+      <header className="page-head">
+        <div>
+          <h1>מחולל ביקונים</h1>
+          <p>הגבר את עוצמת המדיה, ופתח את מצב ההאזנה במכשיר אחר.</p>
+        </div>
+      </header>
 
-      <label htmlFor="beacon-type">סוג</label>
-      <select
-        id="beacon-type"
-        value={values.type}
-        onChange={(e) => handleTypeChange(e.target.value as BeaconType)}
-        disabled={isPlaying}
-      >
-        {BEACON_TYPES.map((type) => (
-          <option key={type} value={type}>
-            {BEACON_LABELS[type]}
-          </option>
-        ))}
-      </select>
+      <section className="glass panel beacon-panel">
+        <label htmlFor="beacon-type">סוג</label>
+        <select
+          id="beacon-type"
+          value={values.type}
+          onChange={(e) => handleTypeChange(e.target.value as BeaconType)}
+          disabled={isPlaying}
+        >
+          {BEACON_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {BEACON_LABELS[type]}
+            </option>
+          ))}
+        </select>
 
-      {isTextBeacon && (
-        <>
-          <label htmlFor="beacon-text">תוכן</label>
-          <input
-            id="beacon-text"
-            dir="ltr"
-            value={values.text}
-            onChange={(e) => setValues({ ...values, text: e.target.value })}
-            disabled={isPlaying}
-          />
-          {errors.text && <p className="form-error">{errors.text}</p>}
-        </>
-      )}
+        {isTextBeacon && (
+          <>
+            <label htmlFor="beacon-text">תוכן</label>
+            <input
+              id="beacon-text"
+              dir="ltr"
+              value={values.text}
+              onChange={(e) => setValues({ ...values, text: e.target.value })}
+              disabled={isPlaying}
+            />
+            {errors.text && <p className="form-error">{errors.text}</p>}
+          </>
+        )}
 
-      <p>
-        משך שידור: {durationMs} ms, חוזר כל {getRepeatMs(values.type)} ms
-      </p>
-      <p dir="ltr">{freqs.map((freq) => `${freq} Hz`).join(", ")}</p>
+        <p className="note">
+          משך שידור: {durationMs} ms, חוזר כל {getRepeatMs(values.type)} ms
+        </p>
+        <p className="beacon-freqs" dir="ltr">
+          {freqs.map((freq) => `${freq} Hz`).join(", ")}
+        </p>
 
-      {isPlaying ? (
-        <button onClick={handleStop}>עצור</button>
-      ) : (
-        <button onClick={handleStart}>התחל שידור</button>
-      )}
+        {isPlaying ? (
+          <button onClick={handleStop}>עצור</button>
+        ) : (
+          <button className="primary" onClick={handleStart}>
+            התחל שידור
+          </button>
+        )}
 
-      {sampleRate && isPlaying && <p>קצב דגימה: {sampleRate} Hz</p>}
-      {startError && <p className="form-error">{startError}</p>}
+        {sampleRate && isPlaying && (
+          <p className="note">קצב דגימה: {sampleRate} Hz</p>
+        )}
+        {startError && <p className="form-error">{startError}</p>}
+      </section>
     </main>
   );
 };
