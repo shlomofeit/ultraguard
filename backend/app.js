@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import cookieParser from "cookie-parser";
 import express from "express";
 import helmet from "helmet";
@@ -14,7 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ credentials: true, origin: process.env.CLIENT_ORIGIN }));
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
@@ -26,11 +28,20 @@ app.use("/api/events", eventsRouter);
 app.use("/api/rooms", roomsRouter);
 app.use("/api/users", usersRouter);
 
-app.use((req, res) => {
+app.use("/api", (req, res) => {
   res
     .status(404)
     .json({ message: `${req.url} doesn't have ${req.method} method!` });
 });
+
+if (process.env.NODE_ENV === "production") {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  const clientDir = path.join(dir, "public");
+  app.use(express.static(clientDir));
+  app.use((req, res) => {
+    res.sendFile(path.join(clientDir, "index.html"));
+  });
+}
 
 app.use(errorHandler);
 
