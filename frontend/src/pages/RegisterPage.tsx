@@ -18,7 +18,7 @@ const RegisterPage = () => {
 
   return (
     <main className="auth-page">
-      <h1>הרשמה</h1>
+      <h1>הרשמה ל-UltraGuard</h1>
       <AuthForm
         showName
         buttonText="הירשם"
