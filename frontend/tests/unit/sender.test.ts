@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Socket } from "socket.io-client";
 import { RETRY_MS, createSender } from "../../src/listener/sender";
-import type { EventInput, SocketAck } from "../../src/types/event";
+import type {
+  EventInput,
+  HeartbeatInput,
+  SocketAck,
+} from "../../src/types/event";
+import { LISTENER_HEARTBEAT } from "../../src/utils/socketEvents";
 
 const makeEvent = (id: string): EventInput => ({
   id,
@@ -19,6 +24,7 @@ const makeEvent = (id: string): EventInput => ({
 const makeFakeSocket = (isConnected: boolean) => {
   const handlers = new Map<string, () => void>();
   const sent: string[] = [];
+  const names: string[] = [];
   const answers: SocketAck[] = [];
   const fake = {
     connected: isConnected,
@@ -26,7 +32,8 @@ const makeFakeSocket = (isConnected: boolean) => {
     on: (name: string, handler: () => void) => handlers.set(name, handler),
     disconnect: vi.fn(),
     timeout: () => ({
-      emitWithAck: async (_name: string, event: EventInput) => {
+      emitWithAck: async (name: string, event: EventInput) => {
+        names.push(name);
         sent.push(event.id);
         return answers.shift() ?? { success: true };
       },
@@ -40,7 +47,14 @@ const makeFakeSocket = (isConnected: boolean) => {
     fake.active = false;
     handlers.get("connect_error")?.();
   };
-  return { socket: fake as unknown as Socket, sent, answers, connect, reject };
+  return {
+    socket: fake as unknown as Socket,
+    sent,
+    names,
+    answers,
+    connect,
+    reject,
+  };
 };
 
 const waitForQueue = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -102,6 +116,25 @@ describe("sender", () => {
     connect();
     await waitForQueue();
     expect(sent).toEqual(["a", "b"]);
+  });
+
+  it("sends a heartbeat only while connected", async () => {
+    const heartbeat: HeartbeatInput = {
+      sentAt: "2026-10-12T08:00:00.000Z",
+      framesProcessed: 430,
+      audioState: "running",
+      isMicLive: true,
+      queueSize: 0,
+    };
+    const offline = makeFakeSocket(false);
+    createSender(offline.socket, vi.fn()).sendHeartbeat(heartbeat);
+    await waitForQueue();
+    expect(offline.names).toEqual([]);
+
+    const online = makeFakeSocket(true);
+    createSender(online.socket, vi.fn()).sendHeartbeat(heartbeat);
+    await waitForQueue();
+    expect(online.names).toEqual([LISTENER_HEARTBEAT]);
   });
 
   it("reports when the server rejects the device key", () => {

@@ -15,6 +15,7 @@ const DashboardPage = () => {
   const events = useEventsStore((state) => state.events);
   const selectedRoomId = useEventsStore((state) => state.selectedRoomId);
   const isLive = useEventsStore((state) => state.isLive);
+  const activeDevices = useEventsStore((state) => state.activeDevices);
   const isLoading = useEventsStore((state) => state.isLoading);
   const error = useEventsStore((state) => state.error);
   const filter = useEventsStore((state) => state.filter);
@@ -33,18 +34,27 @@ const DashboardPage = () => {
   const lastPayload = events.find((event) => event.payload)?.payload;
   const trend = countRecentEvents(events, Date.now());
   const lastHourCount = trend.reduce((sum, count) => sum + count, 0);
-  const averageConfidence =
-    events.length > 0
-      ? events.reduce((sum, event) => sum + event.confidence, 0) / events.length
-      : null;
+  const isRoomListening = isLive && activeDevices > 0;
+
+  const getLiveText = () => {
+    if (!isLive) {
+      return "אין חיבור לשרת";
+    }
+    if (activeDevices === 0) {
+      return "אין מכשיר מאזין בחדר";
+    }
+    const devicesText =
+      activeDevices === 1 ? "מכשיר אחד" : `${activeDevices} מכשירים`;
+    return `מאזין לחדר בזמן אמת · ${devicesText}`;
+  };
 
   return (
     <main className="dashboard-page">
       <header className="page-head">
         <h1>{roomName ?? "דשבורד"}</h1>
-        <span className={isLive ? "live on" : "live"}>
+        <span className={isRoomListening ? "live on" : "live"}>
           <span className="live-dot" />
-          {isLive ? "מאזין לחדר בזמן אמת" : "אין חיבור לשרת"}
+          {getLiveText()}
         </span>
       </header>
 
@@ -91,13 +101,9 @@ const DashboardPage = () => {
           note="הטקסט האחרון שביקון נשא"
         />
         <StatCard
-          label="ביטחון ממוצע"
-          value={
-            averageConfidence === null
-              ? "–"
-              : `${Math.round(averageConfidence * 100)}%`
-          }
-          note="כמה המסווג בטוח בזיהוי"
+          label="מכשירים פעילים"
+          value={String(activeDevices)}
+          note="מכשירים ששולחים דופק כל 10 שניות"
         />
       </div>
 

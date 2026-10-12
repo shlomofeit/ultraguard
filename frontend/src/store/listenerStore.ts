@@ -14,6 +14,7 @@ import {
 const LISTENER_URL = `${import.meta.env.VITE_API_URL}/listener`;
 
 export const MAX_DETECTIONS = 50;
+export const HEARTBEAT_MS = 10000;
 
 const DEVICE_KEY_STORAGE = "ultraguard.deviceKey";
 
@@ -45,6 +46,14 @@ interface ListenerStore {
 
 let capture: Capture | null = null;
 let sender: Sender | null = null;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
+const stopHeartbeat = () => {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+  }
+  heartbeatTimer = null;
+};
 
 export const useListenerStore = create<ListenerStore>((set, get) => ({
   isListening: false,
@@ -78,11 +87,13 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
       let pipeline: ReturnType<typeof createPipeline> | null = null;
       const startedAtMs = Date.now();
       const tracker = createSuspicionTracker();
+      let framesProcessed = 0;
       sender = createSender(
         io(LISTENER_URL, { auth: { deviceKey } }),
         (status) => set(status),
       );
       capture = await startCapture((frame) => {
+        framesProcessed++;
         const detection = pipeline?.processFrame(frame);
         if (!detection || !capture) {
           return;
@@ -103,6 +114,18 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
         }
       });
       pipeline = createPipeline(capture.sampleRate);
+      heartbeatTimer = setInterval(() => {
+        if (!capture) {
+          return;
+        }
+        sender?.sendHeartbeat({
+          sentAt: new Date().toISOString(),
+          framesProcessed,
+          audioState: capture.getAudioState(),
+          isMicLive: capture.isMicLive(),
+          queueSize: get().queueSize,
+        });
+      }, HEARTBEAT_MS);
       set({
         isListening: true,
         isLoading: false,
@@ -121,6 +144,7 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
   },
 
   setStopListening: () => {
+    stopHeartbeat();
     capture?.stop();
     capture = null;
     sender?.stop();

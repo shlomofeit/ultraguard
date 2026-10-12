@@ -1,10 +1,16 @@
 import { create } from "zustand";
 import { io, type Socket } from "socket.io-client";
 import type { Event, EventFilter } from "../types/event";
-import type { Room } from "../types/room";
+import type { Room, RoomStatus } from "../types/room";
 import { getRooms } from "../api/rooms.api";
 import { getEvents } from "../api/events.api";
-import { LIVE_EVENT, LIVE_UNWATCH, LIVE_WATCH } from "../utils/socketEvents";
+import { refreshSession } from "../api/auth.api";
+import {
+  LIVE_EVENT,
+  LIVE_ROOM_STATUS,
+  LIVE_UNWATCH,
+  LIVE_WATCH,
+} from "../utils/socketEvents";
 import { getErrorDetails } from "../utils/getErrorDetails";
 import { matchesFilter } from "../utils/eventFilter";
 
@@ -18,6 +24,7 @@ interface EventsStore {
   events: Event[];
   selectedRoomId: string | null;
   isLive: boolean;
+  activeDevices: number;
   isLoading: boolean;
   error: string | null;
   filter: EventFilter;
@@ -28,6 +35,7 @@ interface EventsStore {
 }
 
 let socket: Socket | null = null;
+let hasRetriedLogin = false;
 
 export const useEventsStore = create<EventsStore>((set, get) => {
   const connectLive = (): Socket => {
@@ -36,13 +44,31 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     }
     socket = io(LIVE_URL, { withCredentials: true });
     socket.on("connect", () => {
+      hasRetriedLogin = false;
       set({ isLive: true });
       const roomId = get().selectedRoomId;
       if (roomId) {
         socket?.emit(LIVE_WATCH, roomId);
       }
     });
-    socket.on("disconnect", () => set({ isLive: false }));
+    socket.on("disconnect", () => set({ isLive: false, activeDevices: 0 }));
+    socket.on("connect_error", async () => {
+      if (!socket || socket.active || hasRetriedLogin) {
+        return;
+      }
+      hasRetriedLogin = true;
+      try {
+        await refreshSession();
+        socket?.connect();
+      } catch {
+        set({ error: "החיבור לשרת נדחה. צריך להתחבר מחדש." });
+      }
+    });
+    socket.on(LIVE_ROOM_STATUS, (status: RoomStatus) => {
+      if (status.roomId === get().selectedRoomId) {
+        set({ activeDevices: status.activeDevices });
+      }
+    });
     socket.on(LIVE_EVENT, (event: Event) => {
       set((state) => {
         const isDuplicate = state.events.some((item) => item.id === event.id);
@@ -50,9 +76,6 @@ export const useEventsStore = create<EventsStore>((set, get) => {
           event.roomId === state.selectedRoomId &&
           matchesFilter(event, state.filter, Date.now());
         if (!isVisible || isDuplicate) {
-          return state;
-        }
-        if (event.roomId !== state.selectedRoomId || isDuplicate) {
           return state;
         }
         return { events: [event, ...state.events].slice(0, MAX_EVENTS) };
@@ -66,6 +89,7 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     events: [],
     selectedRoomId: null,
     isLive: false,
+    activeDevices: 0,
     isLoading: false,
     error: null,
     filter: DEFAULT_FILTER,
@@ -93,7 +117,13 @@ export const useEventsStore = create<EventsStore>((set, get) => {
         live.emit(LIVE_UNWATCH, previousRoomId);
       }
       live.emit(LIVE_WATCH, roomId);
-      set({ selectedRoomId: roomId, events: [], isLoading: true, error: null });
+      set({
+        selectedRoomId: roomId,
+        events: [],
+        activeDevices: 0,
+        isLoading: true,
+        error: null,
+      });
       try {
         const events = await getEvents(roomId, get().filter);
         if (get().selectedRoomId === roomId) {
@@ -118,7 +148,12 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     setStopLive: () => {
       socket?.disconnect();
       socket = null;
-      set({ isLive: false, selectedRoomId: null, events: [] });
+      set({
+        isLive: false,
+        activeDevices: 0,
+        selectedRoomId: null,
+        events: [],
+      });
     },
   };
 });
