@@ -2,12 +2,14 @@ import { useListenerStore } from "../store/listenerStore";
 import DetectionList from "../components/DetectionList";
 import DeviceKeyForm from "../components/DeviceKeyForm";
 import Radar from "../components/Radar";
+import Spectrum from "../components/Spectrum";
 
 const ListenPage = () => {
   const isListening = useListenerStore((state) => state.isListening);
   const isLoading = useListenerStore((state) => state.isLoading);
   const error = useListenerStore((state) => state.error);
   const sampleRate = useListenerStore((state) => state.sampleRate);
+  const analyser = useListenerStore((state) => state.analyser);
   const startedAtMs = useListenerStore((state) => state.startedAtMs);
   const detections = useListenerStore((state) => state.detections);
   const setStartListening = useListenerStore(
@@ -90,6 +92,16 @@ const ListenPage = () => {
           )}
         </section>
       </div>
+
+      <section className="glass panel">
+        <div className="panel-head">
+          <h2>גרף מיקרופון חי</h2>
+          <small>
+            דיבור ורעשים נשארים מתחת ל-16 קילו-הרץ. ביקון מופיע באזור המודגש.
+          </small>
+        </div>
+        <Spectrum analyser={analyser} sampleRate={sampleRate} />
+      </section>
 
       <section className="glass panel">
         <div className="panel-head">
