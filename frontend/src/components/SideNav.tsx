@@ -1,10 +1,12 @@
-import { useLayoutEffect, useRef } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import type { User } from "../types/user";
 import Logo from "./Logo";
+import LiveWave from "./LiveWave";
 
 interface SideNavProps {
   user: User;
+  isListening: boolean;
+  analyser: AnalyserNode | null;
   onLogout: () => void;
 }
 
@@ -20,51 +22,41 @@ const ROLE_LABELS = {
   viewer: "צופה",
 };
 
-const SideNav = ({ user, onLogout }: SideNavProps) => {
-  const linksRef = useRef<HTMLDivElement>(null);
-  const pillRef = useRef<HTMLSpanElement>(null);
-  const location = useLocation();
-
+const SideNav = ({ user, isListening, analyser, onLogout }: SideNavProps) => {
   const visibleLinks = LINKS.filter(
     (link) => !link.adminOnly || user.role === "admin",
   );
 
-  useLayoutEffect(() => {
-    const active = linksRef.current?.querySelector<HTMLElement>("a.active");
-    const pill = pillRef.current;
-    if (!pill) {
-      return;
-    }
-    pill.style.opacity = active ? "1" : "0";
-    pill.style.transform = `translateY(${active?.offsetTop ?? 0}px)`;
-  }, [location.pathname]);
-
   return (
-    <nav className="side-nav">
-      <div className="brand">
-        <Logo />
-        <div>
-          <b>UltraGuard</b>
-          <small>שומר אולטרסוני</small>
+    <nav className="top-nav">
+      <div className="top-nav-inner">
+        <div className="brand">
+          <Logo size={26} />
+          <div>
+            <b>UltraGuard</b>
+            <small>שומר אולטרסוני</small>
+          </div>
         </div>
-      </div>
 
-      <div className="nav-links" ref={linksRef}>
-        <span className="nav-pill" ref={pillRef} />
-        {visibleLinks.map((link) => (
-          <NavLink key={link.to} to={link.to}>
-            {link.label}
-          </NavLink>
-        ))}
-      </div>
-
-      <div className="user-box">
-        <span className="avatar">{user.name.charAt(0)}</span>
-        <div>
-          {user.name}
-          <small>{ROLE_LABELS[user.role]}</small>
+        <div className="nav-links">
+          {visibleLinks.map((link) => (
+            <NavLink key={link.to} to={link.to}>
+              {link.label}
+            </NavLink>
+          ))}
         </div>
-        <button onClick={onLogout}>יציאה</button>
+
+        <div className="user-box">
+          {isListening && (
+            <span className="live on">
+              <LiveWave analyser={analyser} />
+            </span>
+          )}
+          <span>
+            {user.name} · {ROLE_LABELS[user.role]}
+          </span>
+          <button onClick={onLogout}>יציאה</button>
+        </div>
       </div>
     </nav>
   );
