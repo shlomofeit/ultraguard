@@ -18,7 +18,7 @@ const formatTime = (ms: number) => new Date(ms).toLocaleTimeString("he-IL");
 
 const DetectionList = ({ detections, startedAtMs }: DetectionListProps) => {
   if (detections.length === 0) {
-    return <p>עדיין לא זוהה כלום</p>;
+    return <p className="empty">עדיין לא זוהה כלום</p>;
   }
 
   return (

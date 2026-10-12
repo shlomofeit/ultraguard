@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useListenerStore } from "../store/listenerStore";
 import DetectionList from "../components/DetectionList";
 import DeviceKeyForm from "../components/DeviceKeyForm";
+import Radar from "../components/Radar";
 
 const ListenPage = () => {
   const isListening = useListenerStore((state) => state.isListening);
@@ -25,44 +26,88 @@ const ListenPage = () => {
     return () => setStopListening();
   }, [setStopListening]);
 
+  const isOnline = isListening && isConnected && !isRejected;
+
+  const getStatusText = () => {
+    if (!isListening) {
+      return "לא מאזין";
+    }
+    return isOnline ? "מחובר לשרת" : "אין חיבור לשרת";
+  };
+
   return (
     <main className="listen-page">
-      <h1>מצב האזנה</h1>
-      <p>
-        המכשיר מאזין לתדרים 16 קילו-הרץ ומעלה, ומציג כל שידור שזוהה. האודיו נבדק
-        לוקאלית ולא נשמר וכמובן לא נשלח.
-      </p>
-
-      {!isListening && (
-        <DeviceKeyForm deviceKey={deviceKey} onSave={setDeviceKey} />
-      )}
-      {isListening ? (
-        <button onClick={setStopListening}>עצור האזנה</button>
-      ) : (
-        <button onClick={setStartListening} disabled={isLoading}>
-          {isLoading ? "מפעיל..." : "התחל האזנה"}
-        </button>
-      )}
-      <button onClick={removeDetections}>נקה רשימה</button>
+      <header className="page-head">
+        <div>
+          <h1>האזנה</h1>
+          <p>
+            המכשיר מאזין לתדרים 16 קילו-הרץ ומעלה. האודיו נבדק כאן במכשיר, לא
+            נשמר ולא נשלח.
+          </p>
+        </div>
+        <span className={isOnline ? "live on" : "live"}>
+          <span className="live-dot" />
+          {getStatusText()}
+        </span>
+      </header>
 
       {error && <p className="form-error">{error}</p>}
-      {sampleRate && <p>קצב דגימה: {sampleRate} Hz</p>}
       {isRejected && (
         <p className="form-error">
           השרת דחה את מפתח המכשיר. בדוק אותו בדף הניהול.
         </p>
       )}
-      {isListening && !isRejected && (
-        <p>
-          {isConnected ? "מחובר לשרת" : "אין חיבור לשרת"}
-          {queueSize > 0 && ` · ${queueSize} אירועים מחכים לשליחה`}
-        </p>
-      )}
 
-      <DetectionList
-        detections={detections}
-        startedAtMs={startedAtMs ?? Date.now()}
-      />
+      <div className="listen-grid">
+        <section className="glass scope">
+          <Radar
+            detections={detections}
+            isListening={isListening}
+            isLoading={isLoading}
+            onToggle={isListening ? setStopListening : setStartListening}
+          />
+          <div className="readout">
+            <span>
+              קצב דגימה
+              <strong dir="ltr">{sampleRate ? `${sampleRate} Hz` : "–"}</strong>
+            </span>
+            <span>
+              זיהויים<strong>{detections.length}</strong>
+            </span>
+            <span>
+              ממתינים לשליחה<strong>{queueSize}</strong>
+            </span>
+          </div>
+          <p className="note">
+            ברדאר: הזווית היא התדר, והמרחק מהמרכז הוא עוצמת האות.
+          </p>
+        </section>
+
+        <section className="glass panel">
+          <h2>מפתח מכשיר</h2>
+          <p className="note">
+            מקבלים אותו מהמנהל בדף הניהול. נשמר בדפדפן הזה בלבד.
+          </p>
+          {isListening ? (
+            <p className="note">כדי להחליף מפתח, עצור קודם את ההאזנה.</p>
+          ) : (
+            <DeviceKeyForm deviceKey={deviceKey} onSave={setDeviceKey} />
+          )}
+        </section>
+      </div>
+
+      <section className="glass panel">
+        <div className="panel-head">
+          <h2>זיהויים במכשיר</h2>
+          <button onClick={removeDetections}>נקה רשימה</button>
+        </div>
+        <div className="table-scroll">
+          <DetectionList
+            detections={detections}
+            startedAtMs={startedAtMs ?? Date.now()}
+          />
+        </div>
+      </section>
     </main>
   );
 };
