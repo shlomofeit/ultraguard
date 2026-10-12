@@ -1,3 +1,4 @@
+import type { AudioState } from "../types/event";
 import { FRAME_SIZE } from "./dsp";
 
 export const ANALYSER_FFT_SIZE = 2048;
@@ -5,6 +6,8 @@ export const ANALYSER_FFT_SIZE = 2048;
 export interface Capture {
   sampleRate: number;
   analyser: AnalyserNode;
+  getAudioState: () => AudioState;
+  isMicLive: () => boolean;
   stop: () => void;
 }
 
@@ -38,11 +41,25 @@ export const startCapture = async (
   mute.connect(ctx.destination);
   await ctx.resume();
 
+  const getAudioState = (): AudioState =>
+    ctx.state === "running" || ctx.state === "closed" ? ctx.state : "suspended";
+
+  const isMicLive = () =>
+    stream
+      .getAudioTracks()
+      .some((track) => track.readyState === "live" && !track.muted);
+
   const stop = () => {
     capture.port.onmessage = null;
     stream.getTracks().forEach((track) => track.stop());
     void ctx.close();
   };
 
-  return { sampleRate: ctx.sampleRate, analyser, stop };
+  return {
+    sampleRate: ctx.sampleRate,
+    analyser,
+    getAudioState,
+    isMicLive,
+    stop,
+  };
 };

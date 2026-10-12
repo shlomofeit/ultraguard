@@ -4,6 +4,11 @@ export interface Room {
   createdAt: string;
 }
 
+export interface RoomStatus {
+  roomId: string;
+  activeDevices: number;
+}
+
 export interface RoomInput {
   name: string;
 }

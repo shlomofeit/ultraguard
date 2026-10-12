@@ -2,12 +2,26 @@ import {
   LISTENER_EVENT,
   LISTENER_HEARTBEAT,
   LIVE_EVENT,
+  LIVE_ROOM_STATUS,
 } from "../utils/socketEvents.js";
 import { eventsService } from "../services/events.service.js";
 import { devicesService } from "../services/devices.service.js";
+import { presenceService } from "../services/presence.service.js";
+
+const STATUS_CHECK_MS = 5000;
 
 export function registerListenerSocket(io) {
   const listeners = io.of("/listener");
+
+  const sendRoomStatuses = () => {
+    for (const status of presenceService.getChangedStatuses(Date.now())) {
+      io.of("/live")
+        .to(`room:${status.roomId}`)
+        .emit(LIVE_ROOM_STATUS, status);
+    }
+  };
+
+  setInterval(sendRoomStatuses, STATUS_CHECK_MS);
 
   listeners.use(async (socket, next) => {
     try {
@@ -28,6 +42,14 @@ export function registerListenerSocket(io) {
   });
 
   listeners.on("connection", (socket) => {
+    presenceService.connectDevice(socket.id, socket.data.device, Date.now());
+    sendRoomStatuses();
+
+    socket.on("disconnect", () => {
+      presenceService.disconnectDevice(socket.id);
+      sendRoomStatuses();
+    });
+
     socket.on(LISTENER_EVENT, async (data, ack) => {
       try {
         const event = await eventsService.createEvent(data, socket.data.device);
@@ -43,7 +65,12 @@ export function registerListenerSocket(io) {
 
     socket.on(LISTENER_HEARTBEAT, async (data, ack) => {
       try {
-        await devicesService.recordHeartbeat(socket.data.device.id, data);
+        const heartbeat = await devicesService.recordHeartbeat(
+          socket.data.device.id,
+          data,
+        );
+        presenceService.recordHeartbeat(socket.id, heartbeat, Date.now());
+        sendRoomStatuses();
         ack({ success: true });
       } catch (error) {
         ack({ success: false, message: error.message });

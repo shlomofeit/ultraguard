@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io-client";
-import type { EventInput, SocketAck } from "../types/event";
-import { LISTENER_EVENT } from "../utils/socketEvents";
+import type { EventInput, HeartbeatInput, SocketAck } from "../types/event";
+import { LISTENER_EVENT, LISTENER_HEARTBEAT } from "../utils/socketEvents";
 
 export const ACK_TIMEOUT_MS = 5000;
 export const RETRY_MS = 5000;
@@ -14,6 +14,7 @@ export interface SenderStatus {
 
 export interface Sender {
   sendEvent: (event: EventInput) => void;
+  sendHeartbeat: (heartbeat: HeartbeatInput) => void;
   stop: () => void;
 }
 
@@ -84,6 +85,19 @@ export const createSender = (
     void flush();
   };
 
+  const sendHeartbeat = async (heartbeat: HeartbeatInput) => {
+    if (!socket.connected) {
+      return;
+    }
+    try {
+      await socket
+        .timeout(ACK_TIMEOUT_MS)
+        .emitWithAck(LISTENER_HEARTBEAT, heartbeat);
+    } catch {
+      reportStatus();
+    }
+  };
+
   const stop = () => {
     if (retryTimer) {
       clearTimeout(retryTimer);
@@ -91,5 +105,5 @@ export const createSender = (
     socket.disconnect();
   };
 
-  return { sendEvent, stop };
+  return { sendEvent, sendHeartbeat, stop };
 };

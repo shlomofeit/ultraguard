@@ -1,11 +1,32 @@
-import { LIVE_UNWATCH, LIVE_WATCH } from '../utils/socketEvents.js';
+import {
+  LIVE_ROOM_STATUS,
+  LIVE_UNWATCH,
+  LIVE_WATCH,
+} from '../utils/socketEvents.js';
+import { authService } from '../services/auth.service.js';
+import { presenceService } from '../services/presence.service.js';
+import { readCookie } from '../utils/readCookie.js';
 
 export function registerLiveSocket(io) {
   const viewers = io.of('/live');
 
+  viewers.use(async (socket, next) => {
+    try {
+      const token = readCookie(socket.handshake.headers.cookie, 'token');
+      socket.data.user = await authService.getUserFromToken(token);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   viewers.on('connection', (socket) => {
     socket.on(LIVE_WATCH, (roomId) => {
       socket.join(`room:${roomId}`);
+      socket.emit(
+        LIVE_ROOM_STATUS,
+        presenceService.getRoomStatus(roomId, Date.now()),
+      );
     });
 
     socket.on(LIVE_UNWATCH, (roomId) => {
