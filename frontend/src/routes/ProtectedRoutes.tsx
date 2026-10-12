@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
@@ -16,7 +15,6 @@ const ProtectedRoute = ({ adminOnly }: ProtectedRouteProps) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
   if (adminOnly && user.role !== "admin") {
     return <Navigate to="/" replace />;
   }

@@ -20,8 +20,8 @@ const AppRoutes = () => {
           <Route path="/beacons" element={<BeaconGeneratorPage />} />
           <Route path="/listen" element={<ListenPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route element={<ProtectedRoute adminOnly={true} />}>
-            <Route path="/admin" element={<AdminPage />}></Route>
+          <Route element={<ProtectedRoute adminOnly />}>
+            <Route path="/admin" element={<AdminPage />} />
           </Route>
         </Route>
       </Routes>
