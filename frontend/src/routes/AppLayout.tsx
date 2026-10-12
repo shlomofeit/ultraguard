@@ -8,6 +8,7 @@ const AppLayout = () => {
   const user = useAuthStore((state) => state.user);
   const setLogout = useAuthStore((state) => state.setLogout);
   const isListening = useListenerStore((state) => state.isListening);
+  const analyser = useListenerStore((state) => state.analyser);
   const isConnected = useListenerStore((state) => state.isConnected);
   const isRejected = useListenerStore((state) => state.isRejected);
   const detections = useListenerStore((state) => state.detections);
@@ -30,11 +31,17 @@ const AppLayout = () => {
 
   return (
     <div className="app-shell">
-      <SideNav user={user} onLogout={handleLogout} />
+      <SideNav
+        user={user}
+        isListening={isListening}
+        analyser={analyser}
+        onLogout={handleLogout}
+      />
       <Outlet />
       {isBarVisible && (
         <ListeningBar
           isOnline={isConnected && !isRejected}
+          analyser={analyser}
           detectionsCount={detections.length}
           suspiciousCount={suspiciousCount}
           onStop={setStopListening}

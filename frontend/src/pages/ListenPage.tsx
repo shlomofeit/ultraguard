@@ -3,6 +3,7 @@ import DetectionList from "../components/DetectionList";
 import DeviceKeyForm from "../components/DeviceKeyForm";
 import Radar from "../components/Radar";
 import Spectrum from "../components/Spectrum";
+import LiveWave from "../components/LiveWave";
 
 const ListenPage = () => {
   const isListening = useListenerStore((state) => state.isListening);
@@ -43,7 +44,7 @@ const ListenPage = () => {
           </p>
         </div>
         <span className={isOnline ? "live on" : "live"}>
-          <span className="live-dot" />
+          <LiveWave analyser={analyser} />
           {getStatusText()}
         </span>
       </header>

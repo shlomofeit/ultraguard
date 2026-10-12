@@ -2,23 +2,27 @@
    1. Tokens: every color and size lives here
    ========================================================= */
 :root {
-  --abyss: #050b16;
-  --screen: #040a14;
-  --glass: rgb(20 36 64 / 0.55);
-  --glass-edge: rgb(140 180 255 / 0.12);
-  --text: #e6eefb;
-  --dim: #8597b5;
-  --signal: #ffb84d;
+  --bg: #0a0c0f;
+  --screen: #0a0c0f;
+  --panel: #0d1016;
+  --text: #e8ecf1;
+  --dim: #7d8794;
+  --faint: #4a525d;
+  --line: #1c2129;
+  --line-strong: #2a313b;
+  --signal: #ffb547;
   --sonar: #5fe3f0;
-  --ok: #63e6a4;
-  --danger: #ff7a7a;
-  --font: "IBM Plex Sans Hebrew", "Segoe UI", Arial, sans-serif;
+  --ok: #4fe0a0;
+  --danger: #ff7a6b;
+  --font: "IBM Plex Sans Hebrew", -apple-system, "Segoe UI", Arial, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  --radius: 18px;
-  --radius-small: 10px;
-  --sidebar-width: 15.5rem;
+  --radius: 10px;
+  --radius-small: 8px;
+  --wrap: 1180px;
   --spring: cubic-bezier(0.2, 0.9, 0.2, 1.15);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --fast: 150ms;
+  --mid: 220ms;
   color-scheme: dark;
 }
 
@@ -37,35 +41,12 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(
-      1200px 600px at 85% -10%,
-      rgb(40 90 160 / 0.35),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at 0% 110%,
-      rgb(95 227 240 / 0.08),
-      transparent 60%
-    ),
-    var(--abyss);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
-}
-
-/* film grain over everything, very faint */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 h1,
@@ -77,11 +58,12 @@ h3 {
 }
 
 h1 {
-  font-size: 2rem;
+  font-size: 1.6rem;
+  font-weight: 500;
 }
 
 h2 {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
 }
 
 p {
@@ -92,8 +74,13 @@ a {
   color: var(--sonar);
 }
 
-code {
+.mono {
   font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+bdi {
+  display: inline-block;
 }
 
 .page-loading {
@@ -104,180 +91,153 @@ code {
 }
 
 /* =========================================================
-   3. App shell and side navigation
+   3. App shell and top navigation
    ========================================================= */
 .app-shell {
-  display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .app-shell > main {
-  min-width: 0;
-  padding: 2rem 2rem 3rem;
+  width: min(var(--wrap), 100%);
+  margin: 0 auto;
+  padding: 1.6rem 1.5rem 4rem;
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
-  animation: page-in 0.5s var(--ease-out);
+  animation: page-in 0.4s var(--ease-out);
 }
 
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
 }
 
-.side-nav {
-  position: sticky;
-  top: 0;
-  height: 100vh;
+.top-nav {
+  border-bottom: 1px solid var(--line);
+}
+
+.top-nav-inner {
+  width: min(var(--wrap), 100%);
+  margin: 0 auto;
+  height: 56px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 2rem;
-  padding: 1.6rem 1rem;
-  background: linear-gradient(
-    to bottom,
-    rgb(14 28 52 / 0.75),
-    rgb(8 18 36 / 0.75)
-  );
-  backdrop-filter: blur(18px);
-  border-inline-end: 1px solid var(--glass-edge);
+  padding: 0 1.5rem;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  padding-inline: 0.5rem;
+  gap: 0.6rem;
+  font-weight: 600;
 }
 
 .brand b {
   display: block;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.1;
 }
 
 .brand small {
   color: var(--dim);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
 }
 
 .nav-links {
-  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  gap: 1.4rem;
+  height: 100%;
 }
 
 .nav-links a {
   position: relative;
-  z-index: 1;
-  padding: 0.6rem 0.8rem;
-  border-radius: var(--radius-small);
+  display: flex;
+  align-items: center;
   color: var(--dim);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--fast);
 }
 
-.nav-links a:hover,
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--signal);
+  transform: scaleX(0);
+  transition: transform var(--mid) var(--ease-out);
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
 .nav-links a.active {
   color: var(--text);
 }
 
-/* the pill slides to the active link (SideNav moves it with translateY) */
-.nav-pill {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 2.6rem;
-  border-radius: var(--radius-small);
-  background: linear-gradient(
-    90deg,
-    rgb(255 184 77 / 0),
-    rgb(255 184 77 / 0.14)
-  );
-  border: 1px solid rgb(255 184 77 / 0.25);
-  transition:
-    transform 0.45s var(--spring),
-    opacity 0.2s;
+.nav-links a.active::after {
+  transform: scaleX(1);
 }
 
 .user-box {
-  margin-top: auto;
+  margin-inline-start: auto;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.8rem 0.5rem 0;
-  border-top: 1px solid var(--glass-edge);
-  font-size: 0.85rem;
-}
-
-.user-box small {
-  display: block;
+  gap: 0.75rem;
   color: var(--dim);
+  font-size: 0.85rem;
 }
 
 .user-box button {
-  margin-inline-start: auto;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.8rem;
-}
-
-.avatar {
-  flex: none;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #2a4b80, #1a2f55);
-  font-weight: 600;
-}
-
-.listening-bar {
-  position: fixed;
-  bottom: 1rem;
-  inset-inline-end: 1rem;
-  z-index: 5;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.6rem 1rem;
-  border-radius: var(--radius-small);
-  background: var(--screen);
-  border: 1px solid var(--glass-edge);
-  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.6);
+  padding: 0.35rem 0.8rem;
   font-size: 0.85rem;
 }
 
-.listening-bar button {
-  padding: 0.3rem 0.8rem;
-  color: var(--danger);
-  border-color: rgb(255 122 122 / 0.3);
+/* live indicator: a small waveform instead of a blinking dot */
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+}
+
+.wave i {
+  width: 2px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--faint);
+  transition:
+    height 90ms linear,
+    background 90ms linear;
+}
+
+.live.on .wave i {
+  background: var(--ok);
 }
 
 /* =========================================================
-   4. Glass panels and page header
+   4. Panels and page header
    ========================================================= */
-.glass {
-  position: relative;
-  background: var(--glass);
-  border: 1px solid var(--glass-edge);
-  border-radius: var(--radius);
-  backdrop-filter: blur(14px);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.05),
-    0 30px 60px -30px rgb(0 0 0 / 0.6);
-}
-
+.glass,
 .panel {
-  padding: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  min-width: 0;
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
 }
 
 .panel-head {
@@ -286,6 +246,7 @@ code {
   justify-content: space-between;
   align-items: baseline;
   gap: 0.5rem;
+  margin-bottom: 0.9rem;
 }
 
 .panel-head small,
@@ -299,96 +260,57 @@ code {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.6rem 1rem;
 }
 
 .page-head p {
   color: var(--dim);
-}
-
-.live {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--dim);
   font-size: 0.85rem;
-}
-
-.live-dot {
-  position: relative;
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  background: var(--dim);
-}
-
-.live.on .live-dot {
-  background: var(--ok);
-}
-
-.live.on .live-dot::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px solid var(--ok);
-  animation: ping 2.2s ease-out infinite;
-}
-
-@keyframes ping {
-  to {
-    transform: scale(3.4);
-    opacity: 0;
-  }
 }
 
 /* =========================================================
    5. Controls: inputs, selects, buttons, forms
    ========================================================= */
-input,
-select,
-button {
-  font: inherit;
-  color: var(--text);
+label {
+  font-size: 0.85rem;
+  color: var(--dim);
 }
 
 input,
 select {
-  background: rgb(3 9 18 / 0.6);
-  border: 1px solid var(--glass-edge);
+  width: 100%;
+  background: #0b0e13;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-small);
-  padding: 0.55rem 0.8rem;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  padding: 0.55rem 0.7rem;
+  color: var(--text);
+  font: inherit;
+  transition: border-color var(--fast);
 }
 
 input:focus,
 select:focus {
   outline: none;
-  border-color: var(--sonar);
-  box-shadow: 0 0 0 4px rgb(95 227 240 / 0.12);
-}
-
-label {
-  color: var(--dim);
-  font-size: 0.8rem;
+  border-color: var(--signal);
 }
 
 button {
-  cursor: pointer;
-  background: rgb(255 255 255 / 0.06);
-  border: 1px solid var(--glass-edge);
+  font: inherit;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius-small);
   padding: 0.55rem 1rem;
+  cursor: pointer;
   transition:
-    transform 0.15s,
-    background 0.2s,
-    box-shadow 0.2s;
+    border-color var(--fast),
+    background var(--fast),
+    transform var(--fast);
 }
 
 button:hover {
-  background: rgb(255 255 255 / 0.1);
+  border-color: var(--dim);
+  background: rgb(255 255 255 / 0.04);
 }
 
 button:active {
@@ -400,54 +322,44 @@ button:disabled {
   cursor: default;
 }
 
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--sonar);
-  outline-offset: 2px;
-}
-
-/* every submit button, and any button marked "primary", is the amber one */
-form button[type="submit"],
 button.primary {
-  font-weight: 600;
-  color: #241603;
-  background: var(--signal);
-  border-color: transparent;
+  border-color: var(--signal);
+  color: var(--signal);
 }
 
-form button[type="submit"]:hover,
 button.primary:hover {
-  background: var(--signal);
-  box-shadow: 0 8px 24px rgb(255 184 77 / 0.3);
-}
-
-.auth-form,
-.device-form,
-.room-form,
-.device-key-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.auth-form button,
-.device-form button,
-.room-form button,
-.device-key-form button {
-  margin-top: 0.6rem;
+  background: rgb(255 181 71 / 0.1);
 }
 
 .form-error {
   color: var(--danger);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
-.toolbar,
-.events-filter-bar {
+.room-form,
+.device-key-form,
+.device-form,
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.room-form button,
+.device-key-form button {
+  margin-top: 0.5rem;
+  align-self: start;
+}
+
+.toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.8rem;
+}
+
+.toolbar select {
+  width: auto;
 }
 
 /* =========================================================
@@ -460,72 +372,63 @@ button.primary:hover {
 }
 
 .stat {
-  padding: 1rem 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  min-width: 0;
+  padding: 1rem 1.1rem;
 }
 
-.stat span {
+.stat > span {
+  display: block;
   color: var(--dim);
   font-size: 0.8rem;
-}
-
-.stat strong {
-  font-family: var(--mono);
-  font-weight: 500;
-  font-size: 1.7rem;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stat em {
-  font-style: normal;
-  font-size: 0.8rem;
-  color: var(--dim);
-}
-
-.stat.hot strong {
-  color: var(--signal);
 }
 
 .stat-value {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0.2rem;
+}
+
+.stat-value strong {
+  font: 300 2rem/1.1 var(--mono);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat.hot .stat-value strong {
+  color: var(--signal);
+}
+
+.stat em {
+  color: var(--faint);
+  font-style: normal;
+  font-size: 0.8rem;
 }
 
 .trend {
   display: flex;
-  align-items: end;
-  gap: 3px;
-  height: 1.6rem;
+  align-items: flex-end;
+  gap: 2px;
+  height: 2rem;
 }
 
 .trend i {
   width: 4px;
   min-height: 2px;
-  border-radius: 2px;
-  background: rgb(255 184 77 / 0.35);
-  transition: height 0.5s var(--ease-out);
-}
-
-.trend i:last-child {
+  border-radius: 1px;
   background: var(--signal);
+  opacity: 0.6;
 }
 
 /* =========================================================
-   7. Waterfall (frequency over time)
+   7. Waterfall and live spectrum (frequency over time)
    ========================================================= */
 .spectrum-stage {
   position: relative;
   height: 180px;
-  border-radius: 12px;
+  border-radius: var(--radius-small);
   overflow: hidden;
   background: var(--screen);
 }
@@ -540,7 +443,7 @@ button.primary:hover {
 .waterfall-stage {
   position: relative;
   height: 300px;
-  border-radius: 12px;
+  border-radius: var(--radius-small);
   overflow: hidden;
   background: var(--screen);
 }
@@ -641,7 +544,6 @@ button.primary:hover {
   border-radius: 50%;
   margin-inline-end: 0.4rem;
   background: var(--c);
-  box-shadow: 0 0 10px var(--c);
 }
 
 /* =========================================================
@@ -650,7 +552,7 @@ button.primary:hover {
 .columns {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: 1.4rem;
+  gap: 1.2rem;
   align-items: start;
 }
 
@@ -685,7 +587,7 @@ button.primary:hover {
 
 .event-row {
   height: var(--row-height);
-  border-bottom: 1px solid var(--glass-edge);
+  border-bottom: 1px solid var(--line);
   border-radius: 8px;
   font-size: 0.88rem;
 }
@@ -696,7 +598,7 @@ button.primary:hover {
 }
 
 .event-row .time {
-  color: var(--dim);
+  color: var(--faint);
 }
 
 .event-row .payload {
@@ -719,7 +621,7 @@ button.primary:hover {
 
 @keyframes row-flash {
   from {
-    background: rgb(255 184 77 / 0.16);
+    background: rgb(255 181 71 / 0.14);
   }
   to {
     background: transparent;
@@ -762,7 +664,7 @@ button.primary:hover {
 }
 
 .type-bar .track {
-  height: 0.55rem;
+  height: 0.4rem;
   border-radius: 99px;
   background: rgb(255 255 255 / 0.05);
   overflow: hidden;
@@ -772,11 +674,7 @@ button.primary:hover {
   height: 100%;
   width: var(--w);
   border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--c) 40%, transparent),
-    var(--c)
-  );
+  background: var(--c);
   transition: width 0.8s var(--ease-out);
 }
 
@@ -1005,13 +903,15 @@ button.primary:hover {
   font-size: 0.85rem;
 }
 
+
+
 /* =========================================================
    12. Admin, beacon generator and plain tables
    ========================================================= */
 .admin-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.4rem;
+  gap: 1.2rem;
   align-items: start;
 }
 
@@ -1023,7 +923,7 @@ button.primary:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0;
+  margin: 0 0 0.9rem;
   padding: 0;
   list-style: none;
 }
@@ -1045,12 +945,6 @@ button.primary:hover {
   font-size: 0.75rem;
 }
 
-.check {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1058,20 +952,31 @@ button.primary:hover {
   gap: 0.4rem;
 }
 
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.check input {
+  width: auto;
+}
+
 .device-key {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  margin-top: 1rem;
   padding: 1rem;
-  border-radius: 12px;
-  background: rgb(255 184 77 / 0.08);
-  border: 1px solid rgb(255 184 77 / 0.3);
-  animation: page-in 0.4s var(--ease-out);
+  border-radius: var(--radius-small);
+  background: rgb(255 181 71 / 0.07);
+  border: 1px solid rgb(255 181 71 / 0.3);
+  animation: page-in 0.3s var(--ease-out);
 }
 
 .device-key code {
   padding: 0.5rem;
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--screen);
   color: var(--signal);
   word-break: break-all;
@@ -1101,23 +1006,16 @@ button.primary:hover {
 .detection-list td,
 .devices-table td {
   padding: 0.6rem;
-  border-top: 1px solid var(--glass-edge);
+  border-top: 1px solid var(--line);
 }
 
-.devices-table button {
+.devices-table .row-actions button {
   padding: 0.3rem 0.7rem;
   font-size: 0.8rem;
-  color: var(--danger);
-  border-color: rgb(255 122 122 / 0.3);
 }
 
 .beacon-panel {
   max-width: 34rem;
-}
-
-.beacon-panel select,
-.beacon-panel input {
-  width: 100%;
 }
 
 .beacon-freqs {
@@ -1125,46 +1023,165 @@ button.primary:hover {
   color: var(--sonar);
 }
 
+/* status text on the detection list */
+.status.hot {
+  color: var(--danger);
+}
+
+.status.warm {
+  color: var(--signal);
+}
+
+.status.calm {
+  color: var(--faint);
+}
+
 /* =========================================================
-   13. Small screens
+   13. Listening bar (floats up from the bottom)
    ========================================================= */
-@media (max-width: 980px) {
-  .app-shell {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.listening-bar {
+  position: fixed;
+  bottom: 1rem;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0.5rem 0.6rem 0.5rem 1rem;
+  background: #12161b;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  animation: bar-in var(--mid) var(--ease-out);
+}
 
-  .side-nav {
-    position: static;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+@keyframes bar-in {
+  from {
+    transform: translateY(140%);
+  }
+}
+
+.listening-bar a {
+  color: var(--dim);
+  text-decoration: none;
+  transition: color var(--fast);
+}
+
+.listening-bar a:hover {
+  color: var(--text);
+}
+
+.listening-bar button {
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+  color: var(--danger);
+  border-color: rgb(255 122 107 / 0.35);
+}
+
+/* =========================================================
+   14. Suspicion toasts
+   ========================================================= */
+.toasts {
+  position: fixed;
+  top: 68px;
+  inset-inline-end: 1.25rem;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: min(330px, calc(100vw - 2rem));
+}
+
+.toast {
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.75rem 0.85rem;
+  background: #13171d;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.5);
+  animation: toast-in var(--mid) var(--ease-out);
+}
+
+.toast.out {
+  animation: toast-out var(--fast) var(--ease-out) forwards;
+}
+
+.toast .edge {
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--c);
+}
+
+.toast .title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.toast .title b {
+  color: var(--c);
+}
+
+.toast .meta {
+  color: var(--dim);
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
+.toast .meta .mono {
+  color: var(--text);
+}
+
+.toast .close {
+  padding: 0;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  color: var(--faint);
+  background: transparent;
+}
+
+.toast .close:hover {
+  color: var(--text);
+  background: transparent;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px) scale(0.97);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+/* =========================================================
+   15. Small screens
+   ========================================================= */
+@media (max-width: 820px) {
+  .top-nav-inner {
     gap: 1rem;
-    padding: 0.8rem 1rem;
+    padding: 0 1rem;
+    overflow-x: auto;
   }
 
-  .nav-links {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .nav-pill {
+  .brand small {
     display: none;
   }
 
-  .nav-links a.active {
-    background: rgb(255 184 77 / 0.12);
-  }
-
   .user-box {
-    margin: 0;
-    margin-inline-start: auto;
-    padding: 0;
-    border: 0;
+    gap: 0.5rem;
   }
 
   .app-shell > main {
-    padding: 1.2rem 1rem 2rem;
+    padding: 1.2rem 1rem 3rem;
   }
 
   .stats {
@@ -1187,7 +1204,7 @@ button.primary:hover {
 }
 
 /* =========================================================
-   14. Respect "reduce motion" in the operating system
+   16. Respect "reduce motion" in the operating system
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
   *,

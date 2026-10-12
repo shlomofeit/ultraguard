@@ -3,6 +3,7 @@ import { useEventsStore } from "../store/eventsStore";
 import EventsTable from "../components/EventsTable";
 import EventsFilterBar from "../components/EventFilterBar";
 import StatCard from "../components/StatCard";
+import LiveWave from "../components/LiveWave";
 import Waterfall from "../components/Waterfall";
 import TypeBars from "../components/TypeBars";
 import { countRecentEvents } from "../utils/eventFilter";
@@ -53,7 +54,7 @@ const DashboardPage = () => {
       <header className="page-head">
         <h1>{roomName ?? "דשבורד"}</h1>
         <span className={isRoomListening ? "live on" : "live"}>
-          <span className="live-dot" />
+          <LiveWave analyser={null} />
           {getLiveText()}
         </span>
       </header>

@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
+import LiveWave from "./LiveWave";
 
 interface ListeningBarProps {
   isOnline: boolean;
+  analyser: AnalyserNode | null;
   detectionsCount: number;
   suspiciousCount: number;
   onStop: () => void;
@@ -9,6 +11,7 @@ interface ListeningBarProps {
 
 const ListeningBar = ({
   isOnline,
+  analyser,
   detectionsCount,
   suspiciousCount,
   onStop,
@@ -16,7 +19,7 @@ const ListeningBar = ({
   return (
     <aside className="listening-bar">
       <span className={isOnline ? "live on" : "live"}>
-        <span className="live-dot" />
+        <LiveWave analyser={analyser} />
         {isOnline ? "מאזין, מחובר לשרת" : "מאזין, אין חיבור לשרת"}
       </span>
       <span className="note">
