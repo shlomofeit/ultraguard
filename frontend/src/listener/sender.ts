@@ -8,6 +8,7 @@ export const MAX_QUEUE_SIZE = 500;
 
 export interface SenderStatus {
   isConnected: boolean;
+  isRejected: boolean;
   queueSize: number;
 }
 
@@ -24,8 +25,12 @@ export const createSender = (
   let isSending = false;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const reportStatus = () => {
-    onStatus({ isConnected: socket.connected, queueSize: queue.length });
+  const reportStatus = (isRejected = false) => {
+    onStatus({
+      isConnected: socket.connected,
+      isRejected,
+      queueSize: queue.length,
+    });
   };
 
   const scheduleRetry = () => {
@@ -66,7 +71,9 @@ export const createSender = (
     reportStatus();
     void flush();
   });
-  socket.on("disconnect", reportStatus);
+  socket.on("disconnect", () => reportStatus());
+
+  socket.on("connect_error", () => reportStatus(!socket.active));
 
   const sendEvent = (event: EventInput) => {
     queue.push(event);
