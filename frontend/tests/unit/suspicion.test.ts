@@ -69,6 +69,15 @@ describe("suspicion tracker", () => {
     );
   });
 
+  it("does not count different types as the same source", () => {
+    const tracker = createSuspicionTracker();
+    tracker.check(sighting({ type: "unknown" }));
+    tracker.check(sighting({ type: "lisnr", atMs: 1000 }));
+    expect(tracker.check(sighting({ type: "mosquito", atMs: 2000 }))).toBe(
+      null,
+    );
+  });
+
   it("forgets sightings older than the window", () => {
     const tracker = createSuspicionTracker();
     tracker.check(sighting({ atMs: 0 }));
