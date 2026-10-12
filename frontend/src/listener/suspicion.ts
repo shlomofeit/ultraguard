@@ -50,7 +50,9 @@ export const createSuspicionTracker = (): SuspicionTracker => {
     }
 
     const sameFreq = recent.filter(
-      (item) => Math.abs(item.peakFreqHz - sighting.peakFreqHz) <= SAME_FREQ_HZ,
+      (item) =>
+        item.type === sighting.type &&
+        Math.abs(item.peakFreqHz - sighting.peakFreqHz) <= SAME_FREQ_HZ,
     );
     if (sameFreq.length >= SAME_SOURCE_REPEATS) {
       return "repeated-freq";
