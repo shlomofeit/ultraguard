@@ -3,9 +3,11 @@ import { io } from "socket.io-client";
 import { startCapture, type Capture } from "../listener/capture";
 import { createSender, type Sender } from "../listener/sender";
 import { createSuspicionTracker } from "../listener/suspicion";
+import { useToastStore } from "./toastStore";
 import { getErrorDetails } from "../utils/getErrorDetails";
 import {
   createPipeline,
+  getDetectionType,
   toEventInput,
   toSighting,
   type CheckedDetection,
@@ -108,6 +110,13 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
           ),
         }));
         if (suspicion) {
+          const { type } = getDetectionType(detection);
+          useToastStore.getState().setToast({
+            type,
+            reason: suspicion,
+            peakFreqHz: detection.peakFreqHz,
+            payload: detection.payload,
+          });
           sender?.sendEvent(
             toEventInput(detection, startedAtMs, capture.sampleRate),
           );
