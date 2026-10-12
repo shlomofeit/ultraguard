@@ -7,6 +7,7 @@ export const MAX_DISTINCT_PEAKS = 8;
 export const MAX_FRAME_FREQS = 10;
 export const MAX_BEACON_FREQS = 12;
 export const MIN_BEACON_MS = 150;
+export const PROMINENCE_DB = 12;
 
 export const MAIN_PEAK_SHARE = 0.1;
 export const SWEEP_SHARE = 0.8;
@@ -67,6 +68,16 @@ export const spectralEntropy = (
   return entropy / Math.log(excess.length);
 };
 
+export const isSharpPeak = (snr: number[], band: number): boolean => {
+  const neighbors = [snr[band - 1], snr[band + 1]].filter(
+    (value) => value !== undefined,
+  );
+  return (
+    snr[band] >= SNR_THRESHOLD_DB &&
+    snr[band] - Math.min(...neighbors) >= PROMINENCE_DB
+  );
+};
+
 export const analyzeFrame = (
   levelsDb: number[],
   floorDb: number[],
@@ -83,8 +94,9 @@ export const analyzeFrame = (
   const entropy = spectralEntropy(levelsDb, floorDb);
   const isTonal =
     activeFreqsHz.length <= MAX_FRAME_FREQS && entropy < ENTROPY_MAX;
+  const hasSharpPeak = snr.some((_, band) => isSharpPeak(snr, band));
   return {
-    isActive: activeFreqsHz.length > 0 && isTonal,
+    isActive: activeFreqsHz.length > 0 && isTonal && hasSharpPeak,
     peakFreqHz: freqs[peakIndex],
     peakSnrDb: snr[peakIndex],
     entropy,

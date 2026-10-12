@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   analyzeFrame,
   createDetector,
+  isSharpPeak,
   pushFrame,
   spectralEntropy,
   type Detection,
@@ -93,6 +94,25 @@ describe("spectral entropy", () => {
     oneTone[10] = -20;
     expect(spectralEntropy(oneTone, floor)).toBeLessThan(0.05);
     expect(spectralEntropy(Array(25).fill(-20), floor)).toBeGreaterThan(0.99);
+  });
+});
+
+describe("sharp peak", () => {
+  it("accepts a band that stands out from a quiet neighbor", () => {
+    expect(isSharpPeak([0, 20, 0], 1)).toBe(true);
+  });
+
+  it("accepts a lisnr tone in the middle when one side is quiet", () => {
+    expect(isSharpPeak([18, 20, 2], 1)).toBe(true);
+  });
+
+  it("rejects a band inside a wide hump", () => {
+    expect(isSharpPeak([16, 20, 17], 1)).toBe(false);
+  });
+
+  it("checks the band at the edge against its only neighbor", () => {
+    expect(isSharpPeak([20, 3], 0)).toBe(true);
+    expect(isSharpPeak([20, 15], 0)).toBe(false);
   });
 });
 
