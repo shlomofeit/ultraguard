@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/authStore";
 import { useListenerStore } from "../store/listenerStore";
 import SideNav from "../components/SideNav";
 import ListeningBar from "../components/ListeningBar";
+import Toasts from "../components/Toasts";
 
 const AppLayout = () => {
   const user = useAuthStore((state) => state.user);
@@ -38,6 +39,7 @@ const AppLayout = () => {
         onLogout={handleLogout}
       />
       <Outlet />
+      <Toasts />
       {isBarVisible && (
         <ListeningBar
           isOnline={isConnected && !isRejected}
