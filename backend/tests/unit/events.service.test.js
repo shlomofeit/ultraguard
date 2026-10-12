@@ -7,6 +7,10 @@ vi.mock('../../repositories/events.repo.js', () => ({
   eventsRepo: { createEvent: vi.fn(), getEvents: vi.fn() },
 }));
 
+vi.mock('../../repositories/rooms.repo.js', () => ({
+  roomsRepo: {},
+}));
+
 vi.mock('../../repositories/roomMembers.repo.js', () => ({
   roomMembersRepo: { getRoomIdsByUser: vi.fn() },
 }));
