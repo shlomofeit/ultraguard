@@ -2,7 +2,11 @@ import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
-const ProtectedRoute = () => {
+interface ProtectedRouteProps {
+  adminOnly?: boolean;
+}
+
+const ProtectedRoute = ({ adminOnly }: ProtectedRouteProps) => {
   const user = useAuthStore((state) => state.user);
   const isChecked = useAuthStore((state) => state.isChecked);
 
@@ -11,6 +15,10 @@ const ProtectedRoute = () => {
   }
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (adminOnly && user.role !== "admin") {
+    return <Navigate to="/" replace />;
   }
   return <Outlet />;
 };

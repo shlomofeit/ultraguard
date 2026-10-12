@@ -22,6 +22,7 @@ const makeFakeSocket = (isConnected: boolean) => {
   const answers: SocketAck[] = [];
   const fake = {
     connected: isConnected,
+    active: true,
     on: (name: string, handler: () => void) => handlers.set(name, handler),
     disconnect: vi.fn(),
     timeout: () => ({
@@ -35,7 +36,11 @@ const makeFakeSocket = (isConnected: boolean) => {
     fake.connected = true;
     handlers.get("connect")?.();
   };
-  return { socket: fake as unknown as Socket, sent, answers, connect };
+  const reject = () => {
+    fake.active = false;
+    handlers.get("connect_error")?.();
+  };
+  return { socket: fake as unknown as Socket, sent, answers, connect, reject };
 };
 
 const waitForQueue = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -56,6 +61,7 @@ describe("sender", () => {
     expect(sent).toEqual(["a"]);
     expect(onStatus).toHaveBeenLastCalledWith({
       isConnected: true,
+      isRejected: false,
       queueSize: 0,
     });
   });
@@ -71,6 +77,7 @@ describe("sender", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(onStatus).toHaveBeenLastCalledWith({
       isConnected: true,
+      isRejected: false,
       queueSize: 1,
     });
 
@@ -78,6 +85,7 @@ describe("sender", () => {
     expect(sent).toEqual(["a", "a"]);
     expect(onStatus).toHaveBeenLastCalledWith({
       isConnected: true,
+      isRejected: false,
       queueSize: 0,
     });
   });
@@ -94,5 +102,19 @@ describe("sender", () => {
     connect();
     await waitForQueue();
     expect(sent).toEqual(["a", "b"]);
+  });
+
+  it("reports when the server rejects the device key", () => {
+    const { socket, reject } = makeFakeSocket(false);
+    const onStatus = vi.fn();
+    createSender(socket, onStatus);
+
+    reject();
+
+    expect(onStatus).toHaveBeenLastCalledWith({
+      isConnected: false,
+      isRejected: true,
+      queueSize: 0,
+    });
   });
 });

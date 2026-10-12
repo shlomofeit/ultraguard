@@ -8,6 +8,7 @@ const HomePage = () => {
       <Link to="/beacons">מחולל ביקונים</Link>
       <Link to="/listen">מצב האזנה</Link>
       <Link to="/dashboard">דשבורד</Link>
+      <Link to="/admin">ניהול</Link>
     </main>
   );
 };

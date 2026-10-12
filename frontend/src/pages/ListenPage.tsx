@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useListenerStore } from "../store/listenerStore";
 import DetectionList from "../components/DetectionList";
+import DeviceKeyForm from "../components/DeviceKeyForm";
 
 const ListenPage = () => {
   const isListening = useListenerStore((state) => state.isListening);
@@ -16,6 +17,9 @@ const ListenPage = () => {
   const removeDetections = useListenerStore((state) => state.removeDetections);
   const isConnected = useListenerStore((state) => state.isConnected);
   const queueSize = useListenerStore((state) => state.queueSize);
+  const isRejected = useListenerStore((state) => state.isRejected);
+  const deviceKey = useListenerStore((state) => state.deviceKey);
+  const setDeviceKey = useListenerStore((state) => state.setDeviceKey);
 
   useEffect(() => {
     return () => setStopListening();
@@ -29,6 +33,9 @@ const ListenPage = () => {
         לוקאלית ולא נשמר וכמובן לא נשלח.
       </p>
 
+      {!isListening && (
+        <DeviceKeyForm deviceKey={deviceKey} onSave={setDeviceKey} />
+      )}
       {isListening ? (
         <button onClick={setStopListening}>עצור האזנה</button>
       ) : (
@@ -40,7 +47,12 @@ const ListenPage = () => {
 
       {error && <p className="form-error">{error}</p>}
       {sampleRate && <p>קצב דגימה: {sampleRate} Hz</p>}
-      {isListening && (
+      {isRejected && (
+        <p className="form-error">
+          השרת דחה את מפתח המכשיר. בדוק אותו בדף הניהול.
+        </p>
+      )}
+      {isListening && !isRejected && (
         <p>
           {isConnected ? "מחובר לשרת" : "אין חיבור לשרת"}
           {queueSize > 0 && ` · ${queueSize} אירועים מחכים לשליחה`}

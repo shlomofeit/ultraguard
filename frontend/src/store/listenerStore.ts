@@ -13,6 +13,16 @@ const LISTENER_URL = `${import.meta.env.VITE_API_URL}/listener`;
 
 export const MAX_DETECTIONS = 50;
 
+const DEVICE_KEY_STORAGE = "ultraguard.deviceKey";
+
+const readDeviceKey = (): string => {
+  try {
+    return localStorage.getItem(DEVICE_KEY_STORAGE) ?? "";
+  } catch {
+    return "";
+  }
+};
+
 interface ListenerStore {
   isListening: boolean;
   isLoading: boolean;
@@ -22,6 +32,9 @@ interface ListenerStore {
   detections: PipelineDetection[];
   isConnected: boolean;
   queueSize: number;
+  isRejected: boolean;
+  deviceKey: string;
+  setDeviceKey: (deviceKey: string) => void;
   setStartListening: () => void;
   setStopListening: () => void;
   removeDetections: () => void;
@@ -38,17 +51,32 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
   startedAtMs: null,
   detections: [],
   isConnected: false,
+  isRejected: false,
+  deviceKey: readDeviceKey(),
   queueSize: 0,
 
+  setDeviceKey: (deviceKey) => {
+    localStorage.setItem(DEVICE_KEY_STORAGE, deviceKey);
+    set({ deviceKey, isRejected: false });
+  },
+
   setStartListening: async () => {
-    if (get().isListening) {
+    const { isListening, deviceKey } = get();
+    if (isListening) {
+      return;
+    }
+    if (!deviceKey) {
+      set({ error: "צריך להזין מפתח מכשיר לפני שמתחילים להאזין" });
       return;
     }
     set({ isLoading: true, error: null });
     try {
       let pipeline: ReturnType<typeof createPipeline> | null = null;
       const startedAtMs = Date.now();
-      sender = createSender(io(LISTENER_URL), (status) => set(status));
+      sender = createSender(
+        io(LISTENER_URL, { auth: { deviceKey } }),
+        (status) => set(status),
+      );
       capture = await startCapture((frame) => {
         const detection = pipeline?.processFrame(frame);
         if (!detection || !capture) {
