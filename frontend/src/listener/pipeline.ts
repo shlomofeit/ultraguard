@@ -15,7 +15,7 @@ import {
 } from "./detector";
 import { classify, type Classification } from "./classifier";
 import { MAX_TEXT_BEACON_MS, canHaveText, decodeBeacon } from "./decoder";
-import type { Sighting } from "./suspicion";
+import type { Sighting, SuspicionReason } from "./suspicion";
 
 export const MAX_EVENT_FREQS = 16;
 export const MAX_EVENT_DURATION_MS = 60000;
@@ -26,6 +26,10 @@ export const DECODE_TAIL_MS = 100;
 export interface PipelineDetection extends Detection {
   payload: string | null;
   decodedType: EventType | null;
+}
+
+export interface CheckedDetection extends PipelineDetection {
+  suspicion: SuspicionReason | null;
 }
 
 export interface Pipeline {
