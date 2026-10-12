@@ -15,6 +15,7 @@ import {
 } from "./detector";
 import { classify, type Classification } from "./classifier";
 import { MAX_TEXT_BEACON_MS, canHaveText, decodeBeacon } from "./decoder";
+import type { Sighting } from "./suspicion";
 
 export const MAX_EVENT_FREQS = 16;
 export const MAX_EVENT_DURATION_MS = 60000;
@@ -133,6 +134,17 @@ export const getDetectionType = (
     return { type: detection.decodedType, confidence: 1 };
   }
   return classify(detection);
+};
+
+export const toSighting = (detection: PipelineDetection): Sighting => {
+  const { type, confidence } = getDetectionType(detection);
+  return {
+    type,
+    confidence,
+    peakFreqHz: detection.peakFreqHz,
+    payload: detection.payload,
+    atMs: detection.startMs,
+  };
 };
 
 export const toEventInput = (
