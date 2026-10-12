@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useListenerStore } from "../store/listenerStore";
 import DetectionList from "../components/DetectionList";
 import DeviceKeyForm from "../components/DeviceKeyForm";
@@ -21,10 +20,6 @@ const ListenPage = () => {
   const isRejected = useListenerStore((state) => state.isRejected);
   const deviceKey = useListenerStore((state) => state.deviceKey);
   const setDeviceKey = useListenerStore((state) => state.setDeviceKey);
-
-  useEffect(() => {
-    return () => setStopListening();
-  }, [setStopListening]);
 
   const isOnline = isListening && isConnected && !isRejected;
 
