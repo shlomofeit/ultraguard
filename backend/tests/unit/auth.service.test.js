@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { authService, generateToken } from "../../services/auth.service.js";
+import { generateToken } from "../../utils/generateToken.js";
+import { authService } from "../../services/auth.service.js";
 import { usersRepo } from "../../repositories/users.repo.js";
 import { adminMiddleware } from "../../middlewares/adminMiddleware.js";
 
