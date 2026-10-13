@@ -25,8 +25,8 @@ const MAX_EVENTS_LIMIT = 200;
 
 const freqSchema = z
   .number("Frequency must be a number")
-  .min(MIN_FREQ_HZ, "Frequency must be at least 10000 Hz")
-  .max(MAX_FREQ_HZ, "Frequency must be at most 24000 Hz");
+  .min(MIN_FREQ_HZ, `Frequency must be at least ${MIN_FREQ_HZ} Hz`)
+  .max(MAX_FREQ_HZ, `Frequency must be at most ${MAX_FREQ_HZ} Hz`);
 
 export const createEventSchema = z.object({
   id: z.uuid("id must be a valid UUID"),
@@ -35,7 +35,7 @@ export const createEventSchema = z.object({
     .number("durationMs must be a number")
     .int("durationMs must be a whole number")
     .positive("durationMs must be positive")
-    .max(MAX_DURATION_MS, "durationMs must be at most 60000"),
+    .max(MAX_DURATION_MS, `durationMs must be at most ${MAX_DURATION_MS}`),
   type: z.enum(EVENT_TYPES, "type is not a known event type"),
   confidence: z
     .number("confidence must be a number")
@@ -49,7 +49,10 @@ export const createEventSchema = z.object({
   snrDb: z.number("snrDb must be a number"),
   payload: z
     .string("payload must be a string or null")
-    .max(MAX_PAYLOAD_LENGTH, "payload must be at most 256 characters")
+    .max(
+      MAX_PAYLOAD_LENGTH,
+      `payload must be at most ${MAX_PAYLOAD_LENGTH} characters`,
+    )
     .nullable(),
   sampleRate: z
     .number("sampleRate must be a number")
@@ -80,7 +83,7 @@ export const getEventsSchema = z.object({
     .number("limit must be a number")
     .int("limit must be a whole number")
     .min(1, "limit must be at least 1")
-    .max(MAX_EVENTS_LIMIT, "limit must be at most 200")
+    .max(MAX_EVENTS_LIMIT, `limit must be at most ${MAX_EVENTS_LIMIT}`)
     .default(DEFAULT_EVENTS_LIMIT),
 });
 
@@ -113,7 +116,10 @@ export const roomSchema = z.object({
 });
 
 export const userRoomsSchema = z.object({
-  roomIds: z.array(z.uuid("every room id must be a valid UUID"), "roomIds must be a list"),
+  roomIds: z.array(
+    z.uuid("every room id must be a valid UUID"),
+    "roomIds must be a list",
+  ),
 });
 
 export const userRoleSchema = z.object({
