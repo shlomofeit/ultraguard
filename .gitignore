@@ -148,3 +148,7 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 backend/public
+
+BACKEND.md
+CONVENTIONS.md
+demo/
