@@ -4,6 +4,9 @@ export const GRID_STEP_HZ = 250;
 export const NYQUIST_MARGIN_HZ = 500;
 export const NOISE_HISTORY = 50;
 export const MIN_DB = -200;
+export const MIN_FLOOR_DB = -110;
+export const DEAF_FLOOR_DB = -140;
+export const DEAF_FROM_HZ = 17000;
 
 export const makeFreqGrid = (sampleRate: number): number[] => {
   const maxHz = sampleRate / 2 - NYQUIST_MARGIN_HZ;
@@ -94,6 +97,20 @@ export const updateNoiseFloor = (
     }
     return median(history);
   });
+};
+
+export const clampFloor = (floorLevels: number[]): number[] => {
+  return floorLevels.map((level) => Math.max(level, MIN_FLOOR_DB));
+};
+
+export const isDeafAbove = (
+  floorLevels: number[],
+  freqs: number[],
+): boolean => {
+  const highLevels = floorLevels.filter(
+    (_, band) => freqs[band] >= DEAF_FROM_HZ,
+  );
+  return highLevels.length > 0 && median(highLevels) < DEAF_FLOOR_DB;
 };
 
 export const getSnr = (levels: number[], floorLevels: number[]): number[] => {

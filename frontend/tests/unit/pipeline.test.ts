@@ -38,6 +38,29 @@ const run = (samples: Float32Array): PipelineDetection[] => {
 };
 
 describe("pipeline", () => {
+  it("reports a microphone that hears nothing above 17 kHz", () => {
+    const pipeline = createPipeline(SAMPLE_RATE);
+    const silence = new Float32Array(FRAME_SIZE);
+    expect(pipeline.isMicDeaf()).toBe(false);
+    for (let i = 0; i < 60; i++) {
+      pipeline.processFrame(silence);
+    }
+    expect(pipeline.isMicDeaf()).toBe(true);
+  });
+
+  it("does not report a microphone that hears room noise", () => {
+    const pipeline = createPipeline(SAMPLE_RATE);
+    let state = 1;
+    for (let i = 0; i < 60; i++) {
+      const frame = new Float32Array(FRAME_SIZE).map(() => {
+        state = (state * 1664525 + 1013904223) % 4294967296;
+        return (state / 4294967296 - 0.5) * 0.001;
+      });
+      pipeline.processFrame(frame);
+    }
+    expect(pipeline.isMicDeaf()).toBe(false);
+  });
+
   it("turns a beacon into one detection at 44.1 kHz", () => {
     const detections = run(
       withSilence(generateBeacon("silverpush", "UG01", SAMPLE_RATE)),

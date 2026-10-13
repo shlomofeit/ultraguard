@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   FRAME_SIZE,
+  MIN_FLOOR_DB,
+  clampFloor,
   createNoiseFloor,
   getSnr,
   goertzelBank,
+  isDeafAbove,
   makeFreqGrid,
   median,
   updateNoiseFloor,
@@ -100,11 +103,29 @@ describe("noise floor", () => {
     expect(getSnr([-30], floorLevels)[0]).toBe(50);
   });
 
+  it("never lets the floor drop below the minimum", () => {
+    expect(clampFloor([-175, -108, -60])).toEqual([MIN_FLOOR_DB, -108, -60]);
+  });
+
   it("keeps only the last values in the history", () => {
     const floor = createNoiseFloor(1, 3);
     for (const level of [-90, -90, -90, -40, -40]) {
       updateNoiseFloor(floor, [level]);
     }
     expect(floor.history[0]).toEqual([-90, -40, -40]);
+  });
+});
+
+describe("deaf microphone", () => {
+  const freqs = [16000, 16500, 17000, 18000, 19000, 20000];
+
+  it("is deaf when the floor above 17 kHz is digital silence", () => {
+    expect(isDeafAbove([-110, -150, -170, -175, -172, -178], freqs)).toBe(true);
+  });
+
+  it("is not deaf when it hears room noise above 17 kHz", () => {
+    expect(isDeafAbove([-104, -105, -105, -106, -110, -111], freqs)).toBe(
+      false,
+    );
   });
 });
