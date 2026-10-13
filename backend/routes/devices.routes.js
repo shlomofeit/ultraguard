@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
 import { devicesService } from "../services/devices.service.js";
+import { disconnectDevice } from "../sockets/listener.socket.js";
 
 export const router = express.Router();
 
@@ -42,13 +43,23 @@ router.patch("/:id", async (req, res) => {
 router.patch("/:id/revoke", async (req, res) => {
   const { id } = req.params;
   const device = await devicesService.revokeDevice(id);
+  await disconnectDevice(req.app.get("io"), id);
 
   res.json(device);
+});
+
+router.post("/:id/key", async (req, res) => {
+  const { id } = req.params;
+  const replaced = await devicesService.replaceDeviceKey(id);
+  await disconnectDevice(req.app.get("io"), id);
+
+  res.json(replaced);
 });
 
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
   const device = await devicesService.deleteDevice(id);
+  await disconnectDevice(req.app.get("io"), id);
 
   res.json(device);
 });

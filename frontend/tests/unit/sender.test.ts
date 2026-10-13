@@ -22,14 +22,15 @@ const makeEvent = (id: string): EventInput => ({
 });
 
 const makeFakeSocket = (isConnected: boolean) => {
-  const handlers = new Map<string, () => void>();
+  const handlers = new Map<string, (reason?: string) => void>();
   const sent: string[] = [];
   const names: string[] = [];
   const answers: SocketAck[] = [];
   const fake = {
     connected: isConnected,
     active: true,
-    on: (name: string, handler: () => void) => handlers.set(name, handler),
+    on: (name: string, handler: (reason?: string) => void) =>
+      handlers.set(name, handler),
     disconnect: vi.fn(),
     timeout: () => ({
       emitWithAck: async (name: string, event: EventInput) => {
@@ -47,6 +48,10 @@ const makeFakeSocket = (isConnected: boolean) => {
     fake.active = false;
     handlers.get("connect_error")?.();
   };
+  const drop = (reason: string) => {
+    fake.connected = false;
+    handlers.get("disconnect")?.(reason);
+  };
   return {
     socket: fake as unknown as Socket,
     sent,
@@ -54,6 +59,7 @@ const makeFakeSocket = (isConnected: boolean) => {
     answers,
     connect,
     reject,
+    drop,
   };
 };
 
@@ -62,6 +68,30 @@ const waitForQueue = () => new Promise((resolve) => setTimeout(resolve, 0));
 describe("sender", () => {
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("reports a rejected key when the server disconnects the device", () => {
+    const { socket, drop } = makeFakeSocket(true);
+    const onStatus = vi.fn();
+    createSender(socket, onStatus);
+
+    drop("io server disconnect");
+
+    expect(onStatus).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isConnected: false, isRejected: true }),
+    );
+  });
+
+  it("does not report a rejected key when the network drops", () => {
+    const { socket, drop } = makeFakeSocket(true);
+    const onStatus = vi.fn();
+    createSender(socket, onStatus);
+
+    drop("transport close");
+
+    expect(onStatus).toHaveBeenLastCalledWith(
+      expect.objectContaining({ isRejected: false }),
+    );
   });
 
   it("sends an event and empties the queue on success", async () => {

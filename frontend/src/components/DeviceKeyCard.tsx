@@ -32,7 +32,7 @@ const DeviceKeyCard = ({
 
   const getText = () => {
     if (isRevoked) {
-      return "המנהל ביטל את המפתח של המכשיר הזה. צריך מפתח חדש.";
+      return "המנהל ביטל או החליף את המפתח של המכשיר הזה. צריך מפתח חדש.";
     }
     if (status === "checking") {
       return "בודק את המפתח מול השרת…";

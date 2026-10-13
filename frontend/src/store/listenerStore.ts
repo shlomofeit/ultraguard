@@ -157,8 +157,14 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
       let framesProcessed = 0;
       sender = createSender(
         io(LISTENER_URL, { auth: { deviceKey } }),
-        (status) =>
-          set(status.isRejected ? { ...status, keyStatus: "revoked" } : status),
+        (status) => {
+          if (!status.isRejected) {
+            set(status);
+            return;
+          }
+          set({ ...status, keyStatus: "revoked" });
+          get().setStopListening();
+        },
       );
       capture = await startCapture((frame) => {
         framesProcessed++;

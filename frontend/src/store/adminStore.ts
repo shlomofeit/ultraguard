@@ -12,6 +12,7 @@ import {
   createDevice,
   deleteDevice,
   getDevices,
+  replaceDeviceKey,
   revokeDevice,
   updateDevice,
 } from "../api/devices.api";
@@ -36,6 +37,7 @@ interface AdminStore {
   setNewDevice: (input: DeviceInput) => void;
   setEditedDevice: (id: string, input: DeviceInput) => void;
   setRevokedDevice: (id: string) => void;
+  setReplacedDeviceKey: (id: string) => void;
   removeDevice: (id: string) => void;
   removeNewDeviceKey: () => void;
   setEditedUser: (id: string, input: ManagedUserInput) => void;
@@ -168,6 +170,20 @@ export const useAdminStore = create<AdminStore>((set) => ({
       showMessage("המפתח בוטל");
     } catch (err) {
       set({ error: getErrorDetails(err, "לא הצלחתי לבטל את המכשיר") });
+    }
+  },
+
+  setReplacedDeviceKey: async (id) => {
+    set({ error: null, newDeviceKey: null });
+    try {
+      const { device, deviceKey } = await replaceDeviceKey(id);
+      set((state) => ({
+        devices: state.devices.map((item) => (item.id === id ? device : item)),
+        newDeviceKey: deviceKey,
+      }));
+      showMessage(`נוצר מפתח חדש ל"${device.name}"`);
+    } catch (err) {
+      set({ error: getErrorDetails(err, "לא הצלחתי ליצור מפתח חדש") });
     }
   },
 

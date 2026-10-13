@@ -72,7 +72,9 @@ export const createSender = (
     reportStatus();
     void flush();
   });
-  socket.on("disconnect", () => reportStatus());
+  socket.on("disconnect", (reason) =>
+    reportStatus(reason === "io server disconnect"),
+  );
 
   socket.on("connect_error", () => reportStatus(!socket.active));
 

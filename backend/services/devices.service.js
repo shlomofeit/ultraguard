@@ -43,11 +43,17 @@ async function checkRoomExists(roomId) {
   }
 }
 
+function createDeviceKey() {
+  const deviceKey = crypto.randomBytes(KEY_BYTES).toString("base64url");
+
+  return deviceKey;
+}
+
 async function createDevice(deviceData) {
   const { roomId, name, kind } = validateSchema(createDeviceSchema, deviceData);
   await checkRoomExists(roomId);
 
-  const deviceKey = crypto.randomBytes(KEY_BYTES).toString("base64url");
+  const deviceKey = createDeviceKey();
   const row = await devicesRepo.createDevice({
     room_id: roomId,
     name,
@@ -89,6 +95,20 @@ async function revokeDevice(id) {
 
   const device = toDevice(row);
   return device;
+}
+
+async function replaceDeviceKey(id) {
+  const deviceKey = createDeviceKey();
+  const row = await devicesRepo.updateDevice(id, {
+    key_hash: hashDeviceKey(deviceKey),
+    revoked_at: null,
+  });
+
+  if (!row) {
+    throwNotFound();
+  }
+
+  return { device: toDevice(row), deviceKey };
 }
 
 async function deleteDevice(id) {
@@ -153,6 +173,7 @@ export const devicesService = {
   createDevice,
   updateDevice,
   revokeDevice,
+  replaceDeviceKey,
   deleteDevice,
   getDeviceByKey,
   verifyDeviceKey,
