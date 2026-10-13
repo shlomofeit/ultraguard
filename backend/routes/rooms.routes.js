@@ -13,6 +13,12 @@ router.get("/", async (req, res) => {
   res.json(rooms);
 });
 
+router.get("/status", async (req, res) => {
+  const statuses = await roomsService.getRoomsStatus(req.user);
+
+  res.json(statuses);
+});
+
 router.post("/", adminMiddleware, async (req, res) => {
   const room = await roomsService.createRoom(req.body);
 

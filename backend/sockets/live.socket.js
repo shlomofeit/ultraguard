@@ -21,7 +21,7 @@ export function registerLiveSocket(io) {
     }
   });
 
-  viewers.on('connection', (socket) => {
+  viewers.on('connection', async (socket) => {
     socket.on(LIVE_WATCH, async (roomId) => {
       try {
         const canWatch = await roomsService.canAccessRoom(
@@ -46,5 +46,12 @@ export function registerLiveSocket(io) {
     socket.on(LIVE_UNWATCH, (roomId) => {
       socket.leave(`room:${roomId}`);
     });
+
+    try {
+      const rooms = await roomsService.getRooms(socket.data.user);
+      socket.join(rooms.map((room) => `status:${room.id}`));
+    } catch (error) {
+      console.error(error);
+    }
   });
 }

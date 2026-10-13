@@ -17,6 +17,10 @@ vi.mock("../../repositories/roomMembers.repo.js", () => ({
   roomMembersRepo: { getRoomIdsByUser: vi.fn() },
 }));
 
+vi.mock("../../repositories/events.repo.js", () => ({ eventsRepo: {} }));
+
+vi.mock("../../services/devices.service.js", () => ({ devicesService: {} }));
+
 const admin = { id: "admin-1", role: "admin" };
 const viewer = { id: "viewer-1", role: "viewer" };
 
@@ -145,6 +149,62 @@ describe("roomsService", () => {
 
     await expect(roomsService.deleteRoom("nope")).rejects.toMatchObject({
       status: 404,
+    });
+  });
+
+  describe("getRoomState", () => {
+    const room = { id: "room-1", name: "Lab" };
+    const device = (id, changes) => ({
+      id,
+      roomId: "room-1",
+      lastSeenAt: null,
+      revokedAt: null,
+      ...changes,
+    });
+
+    it("is active when a device in the room reports", () => {
+      const devices = [device("device-1"), device("device-2")];
+
+      const roomState = roomsService.getRoomState(room, devices, {
+        activeDevices: 1,
+      });
+
+      expect(roomState).toMatchObject({
+        state: "active",
+        activeDevices: 1,
+        totalDevices: 2,
+      });
+    });
+
+    it("is silent when the room has devices but none reports", () => {
+      const devices = [
+        device("device-1", { lastSeenAt: "2026-10-13T08:00:00.000Z" }),
+        device("device-2", { lastSeenAt: "2026-10-13T09:30:00.000Z" }),
+      ];
+
+      const roomState = roomsService.getRoomState(room, devices, {
+        activeDevices: 0,
+      });
+
+      expect(roomState.state).toBe("silent");
+      expect(roomState.lastSeenAt).toBe("2026-10-13T09:30:00.000Z");
+    });
+
+    it("has no devices when the room has only revoked or other devices", () => {
+      const devices = [
+        device("device-1", { revokedAt: "2026-10-13T08:00:00.000Z" }),
+        device("device-2", { roomId: "room-2" }),
+      ];
+
+      const roomState = roomsService.getRoomState(room, devices, {
+        activeDevices: 0,
+      });
+
+      expect(roomState).toMatchObject({
+        state: "no-devices",
+        totalDevices: 0,
+        lastSeenAt: null,
+      });
     });
   });
 });
