@@ -17,8 +17,18 @@ export interface User {
   createdAt: string;
 }
 
+export interface ManagedUserInput {
+  name: string;
+  role: UserRole;
+  roomIds: string[];
+}
+
 export interface ManagedUser extends User {
   roomIds: string[];
+}
+
+export interface UserFormErrors {
+  name?: string;
 }
 
 export interface AuthFormErrors {

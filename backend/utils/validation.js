@@ -115,15 +115,17 @@ export const roomSchema = z.object({
     .max(50, "name must be at most 50 characters"),
 });
 
-export const userRoomsSchema = z.object({
+export const updateUserSchema = z.object({
+  name: z
+    .string("name must be a string")
+    .trim()
+    .min(2, "name must be at least 2 characters")
+    .max(50, "name must be at most 50 characters"),
+  role: z.enum(USER_ROLES, "role must be admin or viewer"),
   roomIds: z.array(
     z.uuid("every room id must be a valid UUID"),
     "roomIds must be a list",
   ),
-});
-
-export const userRoleSchema = z.object({
-  role: z.enum(USER_ROLES, "role must be admin or viewer"),
 });
 
 export const createDeviceSchema = z.object({
@@ -134,6 +136,16 @@ export const createDeviceSchema = z.object({
     .min(2, "name must be at least 2 characters")
     .max(50, "name must be at most 50 characters"),
   kind: z.enum(DEVICE_KINDS, "kind must be browser or python"),
+});
+
+export const updateDeviceSchema = createDeviceSchema.omit({ kind: true });
+
+export const verifyDeviceKeySchema = z.object({
+  deviceKey: z
+    .string("deviceKey must be a string")
+    .trim()
+    .min(1, "deviceKey is required")
+    .max(200, "deviceKey is too long"),
 });
 
 export function validateSchema(schema, body) {

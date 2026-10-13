@@ -1,15 +1,18 @@
 import { useState } from "react";
 import type { Room } from "../types/room";
 import type {
+  Device,
   DeviceFormErrors,
   DeviceInput,
   DeviceKind,
 } from "../types/device";
 
 interface DeviceFormProps {
+  device: Device | null;
   rooms: Room[];
   isLoading: boolean;
   onSubmit: (input: DeviceInput) => void;
+  onCancel: () => void;
 }
 
 const validateDeviceForm = (values: DeviceInput): DeviceFormErrors => {
@@ -23,11 +26,17 @@ const validateDeviceForm = (values: DeviceInput): DeviceFormErrors => {
   return errors;
 };
 
-const DeviceForm = ({ rooms, isLoading, onSubmit }: DeviceFormProps) => {
+const DeviceForm = ({
+  device,
+  rooms,
+  isLoading,
+  onSubmit,
+  onCancel,
+}: DeviceFormProps) => {
   const [values, setValues] = useState<DeviceInput>({
-    roomId: "",
-    name: "",
-    kind: "browser",
+    roomId: device?.roomId ?? "",
+    name: device?.name ?? "",
+    kind: device?.kind ?? "browser",
   });
   const [errors, setErrors] = useState<DeviceFormErrors>({});
 
@@ -40,7 +49,9 @@ const DeviceForm = ({ rooms, isLoading, onSubmit }: DeviceFormProps) => {
     setErrors(formErrors);
     if (Object.keys(formErrors).length === 0) {
       onSubmit({ ...values, name: values.name.trim() });
-      setValues((current) => ({ ...current, name: "" }));
+      if (!device) {
+        setValues((current) => ({ ...current, name: "" }));
+      }
     }
   };
 
@@ -76,19 +87,32 @@ const DeviceForm = ({ rooms, isLoading, onSubmit }: DeviceFormProps) => {
       />
       {errors.name && <p className="form-error">{errors.name}</p>}
 
-      <label htmlFor="device-kind">סוג</label>
-      <select
-        id="device-kind"
-        value={values.kind}
-        onChange={(e) => handleChange("kind", e.target.value as DeviceKind)}
-      >
-        <option value="browser">דפדפן</option>
-        <option value="python">Python</option>
-      </select>
+      {device ? (
+        <p className="note">העברה לחדר אחר משפיעה רק על אירועים חדשים.</p>
+      ) : (
+        <>
+          <label htmlFor="device-kind">סוג</label>
+          <select
+            id="device-kind"
+            value={values.kind}
+            onChange={(e) => handleChange("kind", e.target.value as DeviceKind)}
+          >
+            <option value="browser">דפדפן</option>
+            <option value="python">Python</option>
+          </select>
+        </>
+      )}
 
-      <button type="submit" disabled={isLoading}>
-        צור מכשיר
-      </button>
+      <div className="row-actions">
+        <button type="submit" className="primary" disabled={isLoading}>
+          {device ? "שמור" : "צור מכשיר"}
+        </button>
+        {device && (
+          <button type="button" onClick={onCancel}>
+            ביטול
+          </button>
+        )}
+      </div>
     </form>
   );
 };

@@ -5,6 +5,9 @@ import { createSender, type Sender } from "../listener/sender";
 import { createSuspicionTracker } from "../listener/suspicion";
 import { useToastStore } from "./toastStore";
 import { getErrorDetails } from "../utils/getErrorDetails";
+import { getErrorStatus } from "../utils/getErrorStatus";
+import { verifyDeviceKey } from "../api/devices.api";
+import type { DeviceKeyInfo, DeviceKeyStatus } from "../types/device";
 import {
   createPipeline,
   getDetectionType,
@@ -29,6 +32,20 @@ const readDeviceKey = (): string => {
   }
 };
 
+const getKeyError = (err: unknown): string => {
+  const status = getErrorStatus(err);
+  if (status === 404) {
+    return "המפתח לא נמצא. בדוק אותו מול המנהל.";
+  }
+  if (status === 403) {
+    return "המפתח הזה בוטל. בקש מהמנהל מפתח חדש.";
+  }
+  if (status === 429) {
+    return "יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.";
+  }
+  return "לא הצלחתי לבדוק את המפתח. נסה שוב.";
+};
+
 interface ListenerStore {
   isListening: boolean;
   isLoading: boolean;
@@ -42,7 +59,12 @@ interface ListenerStore {
   queueSize: number;
   isRejected: boolean;
   deviceKey: string;
+  keyStatus: DeviceKeyStatus;
+  keyInfo: DeviceKeyInfo | null;
+  keyError: string | null;
   setDeviceKey: (deviceKey: string) => void;
+  setCheckedDeviceKey: () => void;
+  removeDeviceKey: () => void;
   setStartListening: () => void;
   setStopListening: () => void;
   removeDetections: () => void;
@@ -71,20 +93,60 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
   isConnected: false,
   isRejected: false,
   deviceKey: readDeviceKey(),
+  keyStatus: readDeviceKey() ? "unchecked" : "none",
+  keyInfo: null,
+  keyError: null,
   queueSize: 0,
 
-  setDeviceKey: (deviceKey) => {
-    localStorage.setItem(DEVICE_KEY_STORAGE, deviceKey);
-    set({ deviceKey, isRejected: false });
+  setDeviceKey: async (deviceKey) => {
+    set({ keyStatus: "checking", keyError: null });
+    try {
+      const keyInfo = await verifyDeviceKey(deviceKey);
+      localStorage.setItem(DEVICE_KEY_STORAGE, deviceKey);
+      set({ deviceKey, keyInfo, keyStatus: "valid", isRejected: false });
+    } catch (err) {
+      set({ keyStatus: "none", keyError: getKeyError(err) });
+    }
+  },
+
+  setCheckedDeviceKey: async () => {
+    const { deviceKey, keyStatus } = get();
+    if (!deviceKey || keyStatus !== "unchecked") {
+      return;
+    }
+    set({ keyStatus: "checking" });
+    try {
+      const keyInfo = await verifyDeviceKey(deviceKey);
+      set({ keyInfo, keyStatus: "valid" });
+    } catch (err) {
+      const status = getErrorStatus(err);
+      const isDead = status === 403 || status === 404;
+      set({ keyStatus: isDead ? "revoked" : "unchecked" });
+    }
+  },
+
+  removeDeviceKey: () => {
+    localStorage.removeItem(DEVICE_KEY_STORAGE);
+    set({
+      deviceKey: "",
+      keyStatus: "none",
+      keyInfo: null,
+      keyError: null,
+      isRejected: false,
+    });
   },
 
   setStartListening: async () => {
-    const { isListening, deviceKey } = get();
+    const { isListening, deviceKey, keyStatus } = get();
     if (isListening) {
       return;
     }
     if (!deviceKey) {
       set({ error: "צריך להזין מפתח מכשיר לפני שמתחילים להאזין" });
+      return;
+    }
+    if (keyStatus === "revoked") {
+      set({ error: "המפתח של המכשיר הזה כבר לא תקף. צריך להזין מפתח חדש" });
       return;
     }
     set({ isLoading: true, error: null });
@@ -95,7 +157,8 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
       let framesProcessed = 0;
       sender = createSender(
         io(LISTENER_URL, { auth: { deviceKey } }),
-        (status) => set(status),
+        (status) =>
+          set(status.isRejected ? { ...status, keyStatus: "revoked" } : status),
       );
       capture = await startCapture((frame) => {
         framesProcessed++;

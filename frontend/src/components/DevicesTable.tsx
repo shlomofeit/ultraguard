@@ -1,24 +1,36 @@
 import type { Device } from "../types/device";
 import type { Room } from "../types/room";
+import { formatTimeAgo } from "../utils/formatTimeAgo";
 
 interface DevicesTableProps {
   devices: Device[];
   rooms: Room[];
+  editingId: string | null;
+  onEdit: (device: Device) => void;
   onRevoke: (device: Device) => void;
   onDelete: (device: Device) => void;
 }
 
-const formatDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("he-IL") : "–";
+const getBadge = (device: Device) => {
+  if (device.revokedAt) {
+    return <span className="badge bad">בוטל</span>;
+  }
+  if (!device.lastSeenAt) {
+    return <span className="badge off">ממתין</span>;
+  }
+  return <span className="badge ok">פעיל</span>;
+};
 
 const DevicesTable = ({
   devices,
   rooms,
+  editingId,
+  onEdit,
   onRevoke,
   onDelete,
 }: DevicesTableProps) => {
   if (devices.length === 0) {
-    return <p>עוד אין מכשירים</p>;
+    return <p className="note">עוד אין מכשירים</p>;
   }
 
   const getRoomName = (roomId: string) =>
@@ -28,30 +40,36 @@ const DevicesTable = ({
     <table className="devices-table">
       <thead>
         <tr>
-          <th>שם</th>
+          <th>מכשיר</th>
           <th>חדר</th>
-          <th>סוג</th>
           <th>נראה לאחרונה</th>
           <th>מצב</th>
           <th>פעולות</th>
         </tr>
       </thead>
       <tbody>
-        {devices.map((device) => (
-          <tr key={device.id}>
-            <td>{device.name}</td>
-            <td>{getRoomName(device.roomId)}</td>
-            <td>{device.kind === "browser" ? "דפדפן" : "Python"}</td>
-            <td>{formatDate(device.lastSeenAt)}</td>
-            <td>{device.revokedAt ? "בוטל" : "פעיל"}</td>
-            <td className="row-actions">
-              {!device.revokedAt && (
-                <button onClick={() => onRevoke(device)}>בטל מפתח</button>
-              )}
-              <button onClick={() => onDelete(device)}>מחק</button>
-            </td>
-          </tr>
-        ))}
+        {devices.map((device) => {
+          const isEditing = device.id === editingId;
+          return (
+            <tr key={device.id} className={isEditing ? "editing" : ""}>
+              <td>{device.name}</td>
+              <td>{getRoomName(device.roomId)}</td>
+              <td>{formatTimeAgo(device.lastSeenAt, Date.now())}</td>
+              <td>{getBadge(device)}</td>
+              <td className="row-actions">
+                <button disabled={isEditing} onClick={() => onEdit(device)}>
+                  {isEditing ? "בעריכה…" : "ערוך"}
+                </button>
+                {!device.revokedAt && (
+                  <button onClick={() => onRevoke(device)}>בטל מפתח</button>
+                )}
+                <button className="danger" onClick={() => onDelete(device)}>
+                  מחק
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

@@ -1,10 +1,6 @@
 import { usersRepo } from "../repositories/users.repo.js";
 import { roomMembersRepo } from "../repositories/roomMembers.repo.js";
-import {
-  userRoleSchema,
-  userRoomsSchema,
-  validateSchema,
-} from "../utils/validation.js";
+import { updateUserSchema, validateSchema } from "../utils/validation.js";
 
 function toUser(row, roomIds) {
   const user = {
@@ -40,9 +36,16 @@ async function getUsers() {
   return users;
 }
 
-async function setUserRooms(id, roomsData) {
-  const { roomIds } = validateSchema(userRoomsSchema, roomsData);
-  const row = await usersRepo.getUserById(id);
+async function updateUser(currentUser, id, userData) {
+  const { name, role, roomIds } = validateSchema(updateUserSchema, userData);
+
+  if (currentUser.id === id && role !== "admin") {
+    const error = new Error("You can't remove your own admin role!");
+    error.status = 400;
+    throw error;
+  }
+
+  const row = await usersRepo.updateUser(id, { name, role });
 
   if (!row) {
     throwNotFound();
@@ -55,24 +58,21 @@ async function setUserRooms(id, roomsData) {
   return user;
 }
 
-async function setUserRole(currentUser, id, roleData) {
-  const { role } = validateSchema(userRoleSchema, roleData);
-
-  if (currentUser.id === id && role !== "admin") {
-    const error = new Error("You can't remove your own admin role!");
+async function deleteUser(currentUser, id) {
+  if (currentUser.id === id) {
+    const error = new Error("You can't delete yourself!");
     error.status = 400;
     throw error;
   }
 
-  const row = await usersRepo.updateUser(id, { role });
+  const row = await usersRepo.deleteUser(id);
 
   if (!row) {
     throwNotFound();
   }
 
-  const roomIds = await roomMembersRepo.getRoomIdsByUser(id);
-  const user = toUser(row, roomIds);
+  const user = toUser(row, []);
   return user;
 }
 
-export const usersService = { getUsers, setUserRooms, setUserRole };
+export const usersService = { getUsers, updateUser, deleteUser };

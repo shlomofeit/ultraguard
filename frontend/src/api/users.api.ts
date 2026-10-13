@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ManagedUser, UserRole } from "../types/user";
+import type { ManagedUser, ManagedUserInput } from "../types/user";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/api/users`;
 
@@ -10,26 +10,19 @@ export const getUsers = async (): Promise<ManagedUser[]> => {
   return data;
 };
 
-export const updateUserRooms = async (
+export const updateUser = async (
   id: string,
-  roomIds: string[],
+  input: ManagedUserInput,
 ): Promise<ManagedUser> => {
-  const { data } = await axios.put<ManagedUser>(
-    `${BASE_URL}/${id}/rooms`,
-    { roomIds },
-    { withCredentials: true },
-  );
+  const { data } = await axios.put<ManagedUser>(`${BASE_URL}/${id}`, input, {
+    withCredentials: true,
+  });
   return data;
 };
 
-export const updateUserRole = async (
-  id: string,
-  role: UserRole,
-): Promise<ManagedUser> => {
-  const { data } = await axios.patch<ManagedUser>(
-    `${BASE_URL}/${id}/role`,
-    { role },
-    { withCredentials: true },
-  );
+export const deleteUser = async (id: string): Promise<ManagedUser> => {
+  const { data } = await axios.delete<ManagedUser>(`${BASE_URL}/${id}`, {
+    withCredentials: true,
+  });
   return data;
 };

@@ -908,41 +908,131 @@ button.primary:hover {
 /* =========================================================
    12. Admin, beacon generator and plain tables
    ========================================================= */
-.admin-grid {
+.tabs {
+  display: flex;
+  gap: 0.3rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs button {
+  margin-bottom: -1px;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--dim);
+}
+
+.tabs button:hover {
+  background: none;
+  color: var(--text);
+}
+
+.tabs button.active {
+  color: var(--text);
+  border-bottom-color: var(--signal);
+}
+
+.tabs .count {
+  margin-inline-start: 0.3rem;
+  color: var(--faint);
+  font-size: 0.8rem;
+}
+
+.manage-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
   gap: 1.2rem;
   align-items: start;
 }
 
-.admin-grid .wide {
-  grid-column: 1 / -1;
+.manage-grid h2 {
+  margin-bottom: 0.8rem;
 }
 
-.room-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0 0 0.9rem;
-  padding: 0;
-  list-style: none;
-}
-
-.room-chips li {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.4rem 0.3rem 0.8rem;
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--line-strong);
   border-radius: 99px;
-  background: rgb(95 227 240 / 0.08);
-  border: 1px solid rgb(95 227 240 / 0.2);
-  font-size: 0.85rem;
-}
-
-.room-chips button {
-  padding: 0.1rem 0.5rem;
-  border-radius: 99px;
+  color: var(--dim);
   font-size: 0.75rem;
+}
+
+.badge.ok {
+  color: var(--ok);
+  border-color: rgb(79 224 160 / 0.4);
+}
+
+.badge.bad {
+  color: var(--danger);
+  border-color: rgb(255 122 107 / 0.4);
+}
+
+.devices-table tr.editing td {
+  background: rgb(255 181 71 / 0.05);
+}
+
+button.danger {
+  color: var(--danger);
+  border-color: rgb(255 122 107 / 0.45);
+}
+
+button.danger:hover {
+  background: rgb(255 122 107 / 0.1);
+}
+
+.key-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.8rem 0;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-small);
+  border: 1px solid rgb(79 224 160 / 0.35);
+  background: rgb(79 224 160 / 0.07);
+  animation: page-in 0.3s var(--ease-out);
+}
+
+.key-status b {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.key-status .mono {
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+
+.key-status.bad {
+  border-color: rgb(255 122 107 / 0.4);
+  background: rgb(255 122 107 / 0.07);
+}
+
+.key-status.bad b {
+  color: var(--danger);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.6);
+  animation: page-in 0.2s var(--ease-out);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: min(420px, 92vw);
+}
+
+.modal .row-actions {
+  justify-content: flex-end;
+  margin-top: 0.4rem;
 }
 
 .row-actions {
@@ -1124,6 +1214,15 @@ button.primary:hover {
   color: var(--c);
 }
 
+.toast.message {
+  --c: var(--ok);
+  align-items: center;
+}
+
+.toast.message .title {
+  font-weight: 500;
+}
+
 .toast .meta {
   color: var(--dim);
   font-size: 0.8rem;
@@ -1190,7 +1289,7 @@ button.primary:hover {
 
   .columns,
   .listen-grid,
-  .admin-grid {
+  .manage-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

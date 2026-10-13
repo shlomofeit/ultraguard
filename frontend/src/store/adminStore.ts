@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Room, RoomInput } from "../types/room";
 import type { Device, DeviceInput } from "../types/device";
-import type { ManagedUser, UserRole } from "../types/user";
+import type { ManagedUser, ManagedUserInput } from "../types/user";
 import {
   createRoom,
   deleteRoom,
@@ -13,9 +13,14 @@ import {
   deleteDevice,
   getDevices,
   revokeDevice,
+  updateDevice,
 } from "../api/devices.api";
-import { getUsers, updateUserRole, updateUserRooms } from "../api/users.api";
+import { deleteUser, getUsers, updateUser } from "../api/users.api";
 import { getErrorDetails } from "../utils/getErrorDetails";
+import { useToastStore } from "./toastStore";
+
+const showMessage = (text: string) =>
+  useToastStore.getState().setMessageToast(text);
 
 interface AdminStore {
   rooms: Room[];
@@ -29,11 +34,12 @@ interface AdminStore {
   setEditedRoom: (id: string, input: RoomInput) => void;
   removeRoom: (id: string) => void;
   setNewDevice: (input: DeviceInput) => void;
+  setEditedDevice: (id: string, input: DeviceInput) => void;
   setRevokedDevice: (id: string) => void;
   removeDevice: (id: string) => void;
   removeNewDeviceKey: () => void;
-  setUserRooms: (id: string, roomIds: string[]) => void;
-  setUserRole: (id: string, role: UserRole) => void;
+  setEditedUser: (id: string, input: ManagedUserInput) => void;
+  removeUser: (id: string) => void;
 }
 
 export const useAdminStore = create<AdminStore>((set) => ({
@@ -66,6 +72,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
     try {
       const room = await createRoom(input);
       set((state) => ({ rooms: [...state.rooms, room], isLoading: false }));
+      showMessage(`החדר "${room.name}" נוסף`);
     } catch (err) {
       set({
         isLoading: false,
@@ -82,6 +89,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
         rooms: state.rooms.map((room) => (room.id === id ? updated : room)),
         isLoading: false,
       }));
+      showMessage("החדר נשמר");
     } catch (err) {
       set({
         isLoading: false,
@@ -102,6 +110,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
           roomIds: user.roomIds.filter((roomId) => roomId !== id),
         })),
       }));
+      showMessage("החדר נמחק");
     } catch (err) {
       set({ error: getErrorDetails(err, "לא הצלחתי למחוק את החדר") });
     }
@@ -116,10 +125,33 @@ export const useAdminStore = create<AdminStore>((set) => ({
         newDeviceKey: deviceKey,
         isLoading: false,
       }));
+      showMessage(`המכשיר "${device.name}" נוצר`);
     } catch (err) {
       set({
         isLoading: false,
         error: getErrorDetails(err, "לא הצלחתי ליצור מכשיר"),
+      });
+    }
+  },
+
+  setEditedDevice: async (id, input) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updated = await updateDevice(id, {
+        roomId: input.roomId,
+        name: input.name,
+      });
+      set((state) => ({
+        devices: state.devices.map((device) =>
+          device.id === id ? updated : device,
+        ),
+        isLoading: false,
+      }));
+      showMessage("המכשיר נשמר");
+    } catch (err) {
+      set({
+        isLoading: false,
+        error: getErrorDetails(err, "לא הצלחתי לשמור את המכשיר"),
       });
     }
   },
@@ -133,6 +165,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
           device.id === id ? revoked : device,
         ),
       }));
+      showMessage("המפתח בוטל");
     } catch (err) {
       set({ error: getErrorDetails(err, "לא הצלחתי לבטל את המכשיר") });
     }
@@ -145,6 +178,7 @@ export const useAdminStore = create<AdminStore>((set) => ({
       set((state) => ({
         devices: state.devices.filter((device) => device.id !== id),
       }));
+      showMessage("המכשיר נמחק");
     } catch (err) {
       set({ error: getErrorDetails(err, "לא הצלחתי למחוק את המכשיר") });
     }
@@ -152,27 +186,33 @@ export const useAdminStore = create<AdminStore>((set) => ({
 
   removeNewDeviceKey: () => set({ newDeviceKey: null }),
 
-  setUserRooms: async (id, roomIds) => {
-    set({ error: null });
+  setEditedUser: async (id, input) => {
+    set({ isLoading: true, error: null });
     try {
-      const updated = await updateUserRooms(id, roomIds);
+      const updated = await updateUser(id, input);
       set((state) => ({
         users: state.users.map((user) => (user.id === id ? updated : user)),
+        isLoading: false,
       }));
+      showMessage("המשתמש נשמר");
     } catch (err) {
-      set({ error: getErrorDetails(err, "לא הצלחתי לעדכן את החדרים") });
+      set({
+        isLoading: false,
+        error: getErrorDetails(err, "לא הצלחתי לשמור את המשתמש"),
+      });
     }
   },
 
-  setUserRole: async (id, role) => {
+  removeUser: async (id) => {
     set({ error: null });
     try {
-      const updated = await updateUserRole(id, role);
+      await deleteUser(id);
       set((state) => ({
-        users: state.users.map((user) => (user.id === id ? updated : user)),
+        users: state.users.filter((user) => user.id !== id),
       }));
+      showMessage("המשתמש נמחק");
     } catch (err) {
-      set({ error: getErrorDetails(err, "לא הצלחתי לשנות את התפקיד") });
+      set({ error: getErrorDetails(err, "לא הצלחתי למחוק את המשתמש") });
     }
   },
 }));
