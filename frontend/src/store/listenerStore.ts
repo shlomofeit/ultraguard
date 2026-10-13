@@ -17,6 +17,7 @@ const LISTENER_URL = `${import.meta.env.VITE_API_URL}/listener`;
 
 export const MAX_DETECTIONS = 50;
 export const HEARTBEAT_MS = 10000;
+export const DEAF_CHECK_FRAMES = 50;
 
 const DEVICE_KEY_STORAGE = "ultraguard.deviceKey";
 
@@ -36,6 +37,7 @@ interface ListenerStore {
   analyser: AnalyserNode | null;
   startedAtMs: number | null;
   detections: CheckedDetection[];
+  isMicDeaf: boolean;
   isConnected: boolean;
   queueSize: number;
   isRejected: boolean;
@@ -65,6 +67,7 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
   analyser: null,
   startedAtMs: null,
   detections: [],
+  isMicDeaf: false,
   isConnected: false,
   isRejected: false,
   deviceKey: readDeviceKey(),
@@ -97,6 +100,12 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
       capture = await startCapture((frame) => {
         framesProcessed++;
         const detection = pipeline?.processFrame(frame);
+        if (pipeline && framesProcessed % DEAF_CHECK_FRAMES === 0) {
+          const isMicDeaf = pipeline.isMicDeaf();
+          if (isMicDeaf !== get().isMicDeaf) {
+            set({ isMicDeaf });
+          }
+        }
         if (!detection || !capture) {
           return;
         }
@@ -160,6 +169,7 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
     sender = null;
     set({
       isListening: false,
+      isMicDeaf: false,
       isConnected: false,
       queueSize: 0,
       analyser: null,

@@ -13,8 +13,8 @@ export const SILVERPUSH = {
 };
 
 export const MOSQUITO = {
-  zeroHz: 19500,
-  oneHz: 20500,
+  zeroHz: 18750,
+  oneHz: 19500,
   bitMs: 10,
   preambleByte: 0xaa,
   maxBytes: 16,

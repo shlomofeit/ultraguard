@@ -2,8 +2,10 @@ import type { EventInput, EventType } from "../types/event";
 import {
   FRAME_SIZE,
   NOISE_HISTORY,
+  clampFloor,
   createNoiseFloor,
   goertzelBank,
+  isDeafAbove,
   makeFreqGrid,
   updateNoiseFloor,
 } from "./dsp";
@@ -34,6 +36,7 @@ export interface CheckedDetection extends PipelineDetection {
 
 export interface Pipeline {
   processFrame: (frame: Float32Array) => PipelineDetection | null;
+  isMicDeaf: () => boolean;
 }
 
 interface PendingDetection {
@@ -53,6 +56,7 @@ export const createPipeline = (sampleRate: number): Pipeline => {
   let firstFrameIndex = 0;
   let frameCount = 0;
   let warmupFrames = NOISE_HISTORY;
+  let rawFloor: number[] = [];
 
   const toSamples = (ms: number) => Math.round((ms * sampleRate) / 1000);
 
@@ -111,7 +115,8 @@ export const createPipeline = (sampleRate: number): Pipeline => {
   const processFrame = (frame: Float32Array): PipelineDetection | null => {
     storeFrame(frame);
     const levels = goertzelBank(frame, freqs, sampleRate);
-    const floorLevels = updateNoiseFloor(floor, levels);
+    rawFloor = updateNoiseFloor(floor, levels);
+    const floorLevels = clampFloor(rawFloor);
     if (warmupFrames > 0) {
       warmupFrames--;
       detector.frameIndex++;
@@ -128,7 +133,9 @@ export const createPipeline = (sampleRate: number): Pipeline => {
     return ready.shift() ?? null;
   };
 
-  return { processFrame };
+  const isMicDeaf = () => warmupFrames === 0 && isDeafAbove(rawFloor, freqs);
+
+  return { processFrame, isMicDeaf };
 };
 
 export const getDetectionType = (
