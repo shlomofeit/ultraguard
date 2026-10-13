@@ -32,8 +32,3 @@ npm run dev
 cd frontend && npm test
 cd backend && npm test
 ```
-
-## מסמכים
-
-- `CONVENTIONS.md`: כללי הכתיבה של הפרונט והמאזין.
-- `BACKEND.md`: כללי הכתיבה של השרת.
