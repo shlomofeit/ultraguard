@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useEventsStore } from "../store/eventsStore";
 import EventsTable from "../components/EventsTable";
 import EventsFilterBar from "../components/EventFilterBar";
@@ -24,11 +25,13 @@ const DashboardPage = () => {
   const setSelectedRoom = useEventsStore((state) => state.setSelectedRoom);
   const setStopLive = useEventsStore((state) => state.setStopLive);
   const setFilter = useEventsStore((state) => state.setFilter);
+  const [searchParams] = useSearchParams();
+  const roomFromLink = searchParams.get("room");
 
   useEffect(() => {
-    setRooms();
+    setRooms(roomFromLink);
     return () => setStopLive();
-  }, [setRooms, setStopLive]);
+  }, [roomFromLink, setRooms, setStopLive]);
 
   const roomName = rooms.find((room) => room.id === selectedRoomId)?.name;
   const lastEvent = events[0];

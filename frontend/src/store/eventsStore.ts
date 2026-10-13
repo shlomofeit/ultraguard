@@ -28,7 +28,7 @@ interface EventsStore {
   isLoading: boolean;
   error: string | null;
   filter: EventFilter;
-  setRooms: () => void;
+  setRooms: (roomId: string | null) => void;
   setSelectedRoom: (roomId: string) => void;
   setStopLive: () => void;
   setFilter: (filter: EventFilter) => void;
@@ -94,12 +94,15 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     error: null,
     filter: DEFAULT_FILTER,
 
-    setRooms: async () => {
+    setRooms: async (roomId) => {
       set({ isLoading: true, error: null });
       try {
         const rooms = await getRooms();
         set({ rooms, isLoading: false });
-        if (!get().selectedRoomId && rooms.length > 0) {
+        const isKnownRoom = rooms.some((room) => room.id === roomId);
+        if (roomId && isKnownRoom) {
+          get().setSelectedRoom(roomId);
+        } else if (!get().selectedRoomId && rooms.length > 0) {
           get().setSelectedRoom(rooms[0].id);
         }
       } catch (err) {

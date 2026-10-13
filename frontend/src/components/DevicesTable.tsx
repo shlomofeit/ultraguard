@@ -11,14 +11,20 @@ interface DevicesTableProps {
   onDelete: (device: Device) => void;
 }
 
-const getBadge = (device: Device) => {
+const ONLINE_MS = 30 * 1000;
+
+const getBadge = (device: Device, nowMs: number) => {
   if (device.revokedAt) {
     return <span className="badge bad">בוטל</span>;
   }
   if (!device.lastSeenAt) {
     return <span className="badge off">ממתין</span>;
   }
-  return <span className="badge ok">פעיל</span>;
+  const isOnline = nowMs - new Date(device.lastSeenAt).getTime() < ONLINE_MS;
+  if (!isOnline) {
+    return <span className="badge off">לא מחובר</span>;
+  }
+  return <span className="badge ok">מחובר</span>;
 };
 
 const DevicesTable = ({
@@ -32,6 +38,8 @@ const DevicesTable = ({
   if (devices.length === 0) {
     return <p className="note">עוד אין מכשירים</p>;
   }
+
+  const nowMs = Date.now();
 
   const getRoomName = (roomId: string) =>
     rooms.find((room) => room.id === roomId)?.name ?? "–";
@@ -54,8 +62,8 @@ const DevicesTable = ({
             <tr key={device.id} className={isEditing ? "editing" : ""}>
               <td>{device.name}</td>
               <td>{getRoomName(device.roomId)}</td>
-              <td>{formatTimeAgo(device.lastSeenAt, Date.now())}</td>
-              <td>{getBadge(device)}</td>
+              <td>{formatTimeAgo(device.lastSeenAt, nowMs)}</td>
+              <td>{getBadge(device, nowMs)}</td>
               <td className="row-actions">
                 <button disabled={isEditing} onClick={() => onEdit(device)}>
                   {isEditing ? "בעריכה…" : "ערוך"}

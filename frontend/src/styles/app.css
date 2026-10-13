@@ -1262,7 +1262,285 @@ button.danger:hover {
 }
 
 /* =========================================================
-   15. Small screens
+   15. Room map, alerts bell and alert toasts
+   ========================================================= */
+.nav-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin-inline-start: 0.35rem;
+  padding: 0 5px;
+  border-radius: 99px;
+  background: var(--danger);
+  color: #1a0d0b;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.nav-beta {
+  margin-inline-start: 0.3rem;
+  color: var(--faint);
+  font-size: 0.72rem;
+}
+
+.bell-wrap {
+  position: relative;
+}
+
+.user-box .bell {
+  position: relative;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.bell .nav-count {
+  position: absolute;
+  top: -6px;
+  inset-inline-end: -6px;
+  margin: 0;
+}
+
+.bell-menu {
+  position: fixed;
+  top: 62px;
+  inset-inline-end: max(1rem, calc((100vw - var(--wrap)) / 2 + 1rem));
+  z-index: 50;
+  width: min(340px, calc(100vw - 2rem));
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #13171d;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.5);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.bell-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.bell-head button {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+}
+
+.bell-empty {
+  padding: 0.9rem;
+}
+
+.alert-row {
+  --c: var(--ok);
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  gap: 0.7rem;
+  align-items: start;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.alert-row:last-child {
+  border-bottom: 0;
+}
+
+.alert-row.room_silent,
+.alert-row.beacon {
+  --c: var(--danger);
+}
+
+.alert-row .pip {
+  width: 8px;
+  height: 8px;
+  margin-top: 0.45rem;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.alert-row.read {
+  opacity: 0.5;
+}
+
+.alert-row.read .pip {
+  background: var(--faint);
+}
+
+.alert-row small {
+  display: block;
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+.alert-row button {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+}
+
+.map-summary {
+  display: flex;
+  gap: 1.2rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.map-summary b {
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.map-summary .bad,
+.map-summary .bad b {
+  color: var(--danger);
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+  gap: 1rem;
+}
+
+.room-card {
+  --c: var(--faint);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: start;
+  transition:
+    border-color var(--fast),
+    transform var(--fast);
+}
+
+.room-card::before {
+  content: "";
+  position: absolute;
+  inset-block: 14px;
+  inset-inline-start: -1px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--c);
+}
+
+.room-card,
+.room-card:hover {
+  background: var(--panel);
+}
+
+.room-card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+.room-card.active {
+  --c: var(--ok);
+}
+
+.room-card.silent,
+.room-card.silent:hover {
+  --c: var(--danger);
+  border-color: rgb(255 122 107 / 0.35);
+  background:
+    linear-gradient(180deg, rgb(255 122 107 / 0.06), transparent 60%),
+    var(--panel);
+}
+
+.room-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.room-top h3 {
+  font-size: 1.05rem;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--c);
+  font-size: 0.8rem;
+}
+
+.state i {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.room-card.active .state i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--c);
+  animation: pulse 1.6s ease-out infinite;
+}
+
+@keyframes pulse {
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.room-msg {
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+
+.room-card.silent .room-msg {
+  color: var(--danger);
+}
+
+.room-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.room-facts span {
+  color: var(--dim);
+  font-size: 0.72rem;
+}
+
+.room-facts b {
+  display: block;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.room-last {
+  color: var(--dim);
+  font-size: 0.78rem;
+}
+
+.room-last b {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.toast.alert {
+  --c: var(--danger);
+}
+
+/* =========================================================
+   16. Small screens
    ========================================================= */
 @media (max-width: 820px) {
   .top-nav-inner {
@@ -1303,7 +1581,7 @@ button.danger:hover {
 }
 
 /* =========================================================
-   16. Respect "reduce motion" in the operating system
+   17. Respect "reduce motion" in the operating system
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
   *,

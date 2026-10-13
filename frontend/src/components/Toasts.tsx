@@ -37,6 +37,24 @@ const Toasts = () => {
             </div>
           );
         }
+        if (toast.kind === "alert") {
+          return (
+            <div key={toast.id} className="toast alert">
+              <span className="edge" />
+              <div>
+                <div className="title">🔴 {toast.text}</div>
+                <div className="meta">אף מכשיר בחדר לא שולח דופק</div>
+              </div>
+              <button
+                className="close"
+                aria-label="סגור"
+                onClick={() => removeToast(toast.id)}
+              >
+                ×
+              </button>
+            </div>
+          );
+        }
         const color = EVENT_TYPE_COLORS[toast.type];
         return (
           <div key={toast.id} className="toast" style={{ "--c": color } as CSSProperties}>

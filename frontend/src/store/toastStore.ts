@@ -20,12 +20,19 @@ export interface MessageToast {
   text: string;
 }
 
-export type Toast = SuspicionToast | MessageToast;
+export interface AlertToast {
+  id: string;
+  kind: "alert";
+  text: string;
+}
+
+export type Toast = SuspicionToast | MessageToast | AlertToast;
 
 interface ToastStore {
   toasts: Toast[];
   setToast: (toast: Omit<SuspicionToast, "id" | "kind">) => void;
   setMessageToast: (text: string) => void;
+  setAlertToast: (text: string) => void;
   removeToast: (id: string) => void;
 }
 
@@ -49,6 +56,9 @@ export const useToastStore = create<ToastStore>((set) => ({
 
   setMessageToast: (text) =>
     addToast(set, { id: crypto.randomUUID(), kind: "message", text }),
+
+  setAlertToast: (text) =>
+    addToast(set, { id: crypto.randomUUID(), kind: "alert", text }),
 
   removeToast: (id) =>
     set((state) => ({

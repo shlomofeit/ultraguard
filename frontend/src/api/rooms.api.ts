@@ -1,10 +1,17 @@
 import axios from "axios";
-import type { Room, RoomInput } from "../types/room";
+import type { Room, RoomInput, RoomStatus } from "../types/room";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/api/rooms`;
 
 export const getRooms = async (): Promise<Room[]> => {
   const { data } = await axios.get<Room[]>(BASE_URL, { withCredentials: true });
+  return data;
+};
+
+export const getRoomsStatus = async (): Promise<RoomStatus[]> => {
+  const { data } = await axios.get<RoomStatus[]>(`${BASE_URL}/status`, {
+    withCredentials: true,
+  });
   return data;
 };
 
