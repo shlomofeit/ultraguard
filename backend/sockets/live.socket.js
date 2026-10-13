@@ -4,7 +4,6 @@ import {
   LIVE_WATCH,
 } from '../utils/socketEvents.js';
 import { authService } from '../services/auth.service.js';
-import { presenceService } from '../services/presence.service.js';
 import { roomsService } from '../services/rooms.service.js';
 import { readCookie } from '../utils/readCookie.js';
 
@@ -37,10 +36,12 @@ export function registerLiveSocket(io) {
       }
 
       socket.join(`room:${roomId}`);
-      socket.emit(
-        LIVE_ROOM_STATUS,
-        presenceService.getRoomStatus(roomId, Date.now()),
-      );
+      try {
+        const roomStatus = await roomsService.getRoomStatus(roomId);
+        socket.emit(LIVE_ROOM_STATUS, roomStatus);
+      } catch (error) {
+        console.error(error);
+      }
     });
 
     socket.on(LIVE_UNWATCH, (roomId) => {

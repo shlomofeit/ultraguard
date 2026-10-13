@@ -7,6 +7,7 @@ import AppLayout from "./AppLayout";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import AdminPage from "../pages/AdminPage";
+import RoomsMapPage from "../pages/RoomsMapPage";
 
 const AppRoutes = () => {
   return (
@@ -16,7 +17,8 @@ const AppRoutes = () => {
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route index element={<Navigate to="/rooms" replace />} />
+            <Route path="/rooms" element={<RoomsMapPage />} />
             <Route path="/beacons" element={<BeaconGeneratorPage />} />
             <Route path="/listen" element={<ListenPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
