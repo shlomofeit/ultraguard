@@ -13,6 +13,8 @@ import { router as usersRouter } from "./routes/users.routes.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ credentials: true, origin: process.env.CLIENT_ORIGIN }));
