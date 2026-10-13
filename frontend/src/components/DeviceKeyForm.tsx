@@ -1,29 +1,50 @@
 import { useState } from "react";
 
 interface DeviceKeyFormProps {
-  deviceKey: string;
-  onSave: (deviceKey: string) => void;
+  isChecking: boolean;
+  error: string | null;
+  onSubmit: (deviceKey: string) => void;
 }
 
-const DeviceKeyForm = ({ deviceKey, onSave }: DeviceKeyFormProps) => {
-  const [value, setValue] = useState(deviceKey);
+const DeviceKeyForm = ({ isChecking, error, onSubmit }: DeviceKeyFormProps) => {
+  const [value, setValue] = useState("");
+
+  const handleSubmit = () => {
+    if (value.trim()) {
+      onSubmit(value.trim());
+    }
+  };
 
   return (
     <form
       className="device-key-form"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(value.trim());
+        handleSubmit();
       }}
     >
       <label htmlFor="device-key">מפתח מכשיר</label>
       <input
         id="device-key"
+        type="password"
         dir="ltr"
+        autoComplete="off"
+        placeholder="הדבק כאן את המפתח"
         value={value}
         onChange={(e) => setValue(e.target.value)}
       />
-      <button type="submit">שמור</button>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      <button
+        type="submit"
+        className="primary"
+        disabled={isChecking || !value.trim()}
+      >
+        {isChecking ? "בודק…" : "בדוק ושמור"}
+      </button>
     </form>
   );
 };

@@ -18,6 +18,14 @@ export interface CreatedDevice {
   deviceKey: string;
 }
 
+export interface DeviceKeyInfo {
+  deviceName: string;
+  roomName: string;
+}
+
+export type DeviceKeyStatus =
+  "none" | "checking" | "unchecked" | "valid" | "revoked";
+
 export interface DeviceFormErrors {
   roomId?: string;
   name?: string;

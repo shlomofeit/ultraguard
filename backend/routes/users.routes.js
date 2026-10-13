@@ -13,16 +13,16 @@ router.get("/", async (req, res) => {
   res.json(users);
 });
 
-router.put("/:id/rooms", async (req, res) => {
+router.put("/:id", async (req, res) => {
   const { id } = req.params;
-  const user = await usersService.setUserRooms(id, req.body);
+  const user = await usersService.updateUser(req.user, id, req.body);
 
   res.json(user);
 });
 
-router.patch("/:id/role", async (req, res) => {
+router.delete("/:id", async (req, res) => {
   const { id } = req.params;
-  const user = await usersService.setUserRole(req.user, id, req.body);
+  const user = await usersService.deleteUser(req.user, id);
 
   res.json(user);
 });

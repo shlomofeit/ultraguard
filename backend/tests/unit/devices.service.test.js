@@ -94,6 +94,76 @@ describe("devicesService", () => {
     expect(await devicesService.getDeviceByKey(undefined)).toBeNull();
   });
 
+  it("moves a device to another room and renames it", async () => {
+    vi.mocked(roomsRepo.getRoomById).mockResolvedValue({ id: ROOM_ID });
+    vi.mocked(devicesRepo.updateDevice).mockResolvedValue({
+      ...deviceRow,
+      name: "Back laptop",
+    });
+
+    const device = await devicesService.updateDevice("device-1", {
+      roomId: ROOM_ID,
+      name: " Back laptop ",
+    });
+
+    expect(devicesRepo.updateDevice).toHaveBeenCalledWith("device-1", {
+      room_id: ROOM_ID,
+      name: "Back laptop",
+    });
+    expect(device.name).toBe("Back laptop");
+  });
+
+  it("rejects moving a device to a missing room with status 404", async () => {
+    vi.mocked(roomsRepo.getRoomById).mockResolvedValue(null);
+
+    await expect(
+      devicesService.updateDevice("device-1", {
+        roomId: ROOM_ID,
+        name: "Back laptop",
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(devicesRepo.updateDevice).not.toHaveBeenCalled();
+  });
+
+  it("tells the listener which device and room a valid key belongs to", async () => {
+    vi.mocked(devicesRepo.getDeviceByKeyHash).mockResolvedValue(deviceRow);
+    vi.mocked(roomsRepo.getRoomById).mockResolvedValue({
+      id: ROOM_ID,
+      name: "Lab",
+    });
+
+    const keyInfo = await devicesService.verifyDeviceKey({
+      deviceKey: "some-key",
+    });
+
+    expect(devicesRepo.getDeviceByKeyHash).toHaveBeenCalledWith(
+      hashDeviceKey("some-key"),
+    );
+    expect(keyInfo).toEqual({ deviceName: "Lab laptop", roomName: "Lab" });
+  });
+
+  it("rejects an unknown key with 404 and a revoked key with 403", async () => {
+    vi.mocked(devicesRepo.getDeviceByKeyHash).mockResolvedValueOnce(null);
+    await expect(
+      devicesService.verifyDeviceKey({ deviceKey: "wrong" }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    vi.mocked(devicesRepo.getDeviceByKeyHash).mockResolvedValueOnce({
+      ...deviceRow,
+      revoked_at: "2026-10-11T09:00:00.000Z",
+    });
+    await expect(
+      devicesService.verifyDeviceKey({ deviceKey: "old" }),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("rejects an empty key with status 400", async () => {
+    await expect(
+      devicesService.verifyDeviceKey({ deviceKey: "  " }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(devicesRepo.getDeviceByKeyHash).not.toHaveBeenCalled();
+  });
+
   it("revokes a device and keeps it in the list", async () => {
     vi.mocked(devicesRepo.updateDevice).mockResolvedValue({
       ...deviceRow,

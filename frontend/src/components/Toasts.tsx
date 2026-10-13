@@ -22,6 +22,21 @@ const Toasts = () => {
   return (
     <div className="toasts">
       {toasts.map((toast) => {
+        if (toast.kind === "message") {
+          return (
+            <div key={toast.id} className="toast message">
+              <span className="edge" />
+              <div className="title">✓ {toast.text}</div>
+              <button
+                className="close"
+                aria-label="סגור"
+                onClick={() => removeToast(toast.id)}
+              >
+                ×
+              </button>
+            </div>
+          );
+        }
         const color = EVENT_TYPE_COLORS[toast.type];
         return (
           <div key={toast.id} className="toast" style={{ "--c": color } as CSSProperties}>

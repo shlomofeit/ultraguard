@@ -5,7 +5,9 @@ import { hashDeviceKey } from "../utils/hashDeviceKey.js";
 import {
   createDeviceSchema,
   heartbeatSchema,
+  updateDeviceSchema,
   validateSchema,
+  verifyDeviceKeySchema,
 } from "../utils/validation.js";
 
 const KEY_BYTES = 24;
@@ -31,8 +33,7 @@ async function getDevices() {
   return devices;
 }
 
-async function createDevice(deviceData) {
-  const { roomId, name, kind } = validateSchema(createDeviceSchema, deviceData);
+async function checkRoomExists(roomId) {
   const room = await roomsRepo.getRoomById(roomId);
 
   if (!room) {
@@ -40,6 +41,11 @@ async function createDevice(deviceData) {
     error.status = 404;
     throw error;
   }
+}
+
+async function createDevice(deviceData) {
+  const { roomId, name, kind } = validateSchema(createDeviceSchema, deviceData);
+  await checkRoomExists(roomId);
 
   const deviceKey = crypto.randomBytes(KEY_BYTES).toString("base64url");
   const row = await devicesRepo.createDevice({
@@ -56,6 +62,20 @@ function throwNotFound() {
   const error = new Error("Device not found!");
   error.status = 404;
   throw error;
+}
+
+async function updateDevice(id, deviceData) {
+  const { roomId, name } = validateSchema(updateDeviceSchema, deviceData);
+  await checkRoomExists(roomId);
+
+  const row = await devicesRepo.updateDevice(id, { room_id: roomId, name });
+
+  if (!row) {
+    throwNotFound();
+  }
+
+  const device = toDevice(row);
+  return device;
 }
 
 async function revokeDevice(id) {
@@ -97,6 +117,28 @@ async function getDeviceByKey(deviceKey) {
   return device;
 }
 
+async function verifyDeviceKey(keyData) {
+  const { deviceKey } = validateSchema(verifyDeviceKeySchema, keyData);
+  const row = await devicesRepo.getDeviceByKeyHash(hashDeviceKey(deviceKey));
+
+  if (!row) {
+    const error = new Error("Device key not found!");
+    error.status = 404;
+    throw error;
+  }
+
+  if (row.revoked_at) {
+    const error = new Error("Device key was revoked!");
+    error.status = 403;
+    throw error;
+  }
+
+  const room = await roomsRepo.getRoomById(row.room_id);
+  const keyInfo = { deviceName: row.name, roomName: room.name };
+
+  return keyInfo;
+}
+
 async function recordHeartbeat(deviceId, heartbeatData) {
   const heartbeat = validateSchema(heartbeatSchema, heartbeatData);
   await devicesRepo.updateDevice(deviceId, {
@@ -109,8 +151,10 @@ async function recordHeartbeat(deviceId, heartbeatData) {
 export const devicesService = {
   getDevices,
   createDevice,
+  updateDevice,
   revokeDevice,
   deleteDevice,
   getDeviceByKey,
+  verifyDeviceKey,
   recordHeartbeat,
 };

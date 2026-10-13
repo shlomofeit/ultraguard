@@ -4,7 +4,12 @@ import { usersRepo } from "../../repositories/users.repo.js";
 import { roomMembersRepo } from "../../repositories/roomMembers.repo.js";
 
 vi.mock("../../repositories/users.repo.js", () => ({
-  usersRepo: { getUsers: vi.fn(), getUserById: vi.fn(), updateUser: vi.fn() },
+  usersRepo: {
+    getUsers: vi.fn(),
+    getUserById: vi.fn(),
+    updateUser: vi.fn(),
+    deleteUser: vi.fn(),
+  },
 }));
 
 vi.mock("../../repositories/roomMembers.repo.js", () => ({
@@ -32,6 +37,7 @@ describe("usersService", () => {
   beforeEach(() => {
     vi.mocked(usersRepo.getUserById).mockReset();
     vi.mocked(usersRepo.updateUser).mockReset();
+    vi.mocked(usersRepo.deleteUser).mockReset();
     vi.mocked(roomMembersRepo.replaceUserRooms).mockReset();
   });
 
@@ -48,13 +54,22 @@ describe("usersService", () => {
     expect(user).not.toHaveProperty("password_hash");
   });
 
-  it("replaces the rooms of a user without repeats", async () => {
-    vi.mocked(usersRepo.getUserById).mockResolvedValue(userRow);
+  it("updates the name, role and rooms of a user without repeats", async () => {
+    vi.mocked(usersRepo.updateUser).mockResolvedValue({
+      ...userRow,
+      name: "Dana Cohen",
+    });
 
-    const user = await usersService.setUserRooms("viewer-1", {
+    const user = await usersService.updateUser(admin, "viewer-1", {
+      name: " Dana Cohen ",
+      role: "viewer",
       roomIds: [ROOM_A, ROOM_B, ROOM_A],
     });
 
+    expect(usersRepo.updateUser).toHaveBeenCalledWith("viewer-1", {
+      name: "Dana Cohen",
+      role: "viewer",
+    });
     expect(roomMembersRepo.replaceUserRooms).toHaveBeenCalledWith("viewer-1", [
       ROOM_A,
       ROOM_B,
@@ -62,48 +77,66 @@ describe("usersService", () => {
     expect(user.roomIds).toEqual([ROOM_A, ROOM_B]);
   });
 
-  it("rejects rooms that are not ids with status 400", async () => {
+  it("rejects rooms that are not ids or an unknown role with status 400", async () => {
+    const valid = { name: "Dana", role: "viewer", roomIds: [] };
+
     await expect(
-      usersService.setUserRooms("viewer-1", { roomIds: ["lab"] }),
+      usersService.updateUser(admin, "viewer-1", {
+        ...valid,
+        roomIds: ["lab"],
+      }),
     ).rejects.toMatchObject({ status: 400 });
-    expect(roomMembersRepo.replaceUserRooms).not.toHaveBeenCalled();
-  });
-
-  it("rejects rooms for a missing user with status 404", async () => {
-    vi.mocked(usersRepo.getUserById).mockResolvedValue(null);
-
     await expect(
-      usersService.setUserRooms("nope", { roomIds: [] }),
-    ).rejects.toMatchObject({ status: 404 });
-  });
-
-  it("changes the role of another user", async () => {
-    vi.mocked(usersRepo.updateUser).mockResolvedValue({
-      ...userRow,
-      role: "admin",
-    });
-    vi.mocked(roomMembersRepo.getRoomIdsByUser).mockResolvedValue([]);
-
-    const user = await usersService.setUserRole(admin, "viewer-1", {
-      role: "admin",
-    });
-
-    expect(usersRepo.updateUser).toHaveBeenCalledWith("viewer-1", {
-      role: "admin",
-    });
-    expect(user.role).toBe("admin");
-  });
-
-  it("does not let an admin remove their own admin role", async () => {
-    await expect(
-      usersService.setUserRole(admin, "admin-1", { role: "viewer" }),
+      usersService.updateUser(admin, "viewer-1", { ...valid, role: "owner" }),
     ).rejects.toMatchObject({ status: 400 });
     expect(usersRepo.updateUser).not.toHaveBeenCalled();
   });
 
-  it("rejects an unknown role with status 400", async () => {
+  it("rejects updating a missing user with status 404", async () => {
+    vi.mocked(usersRepo.updateUser).mockResolvedValue(null);
+
     await expect(
-      usersService.setUserRole(admin, "viewer-1", { role: "owner" }),
+      usersService.updateUser(admin, "nope", {
+        name: "Dana",
+        role: "viewer",
+        roomIds: [],
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(roomMembersRepo.replaceUserRooms).not.toHaveBeenCalled();
+  });
+
+  it("does not let an admin remove their own admin role", async () => {
+    await expect(
+      usersService.updateUser(admin, "admin-1", {
+        name: "Shlomo",
+        role: "viewer",
+        roomIds: [],
+      }),
     ).rejects.toMatchObject({ status: 400 });
+    expect(usersRepo.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("deletes another user without the password in the answer", async () => {
+    vi.mocked(usersRepo.deleteUser).mockResolvedValue(userRow);
+
+    const user = await usersService.deleteUser(admin, "viewer-1");
+
+    expect(usersRepo.deleteUser).toHaveBeenCalledWith("viewer-1");
+    expect(user).not.toHaveProperty("password_hash");
+  });
+
+  it("does not let an admin delete themselves", async () => {
+    await expect(
+      usersService.deleteUser(admin, "admin-1"),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(usersRepo.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("rejects deleting a missing user with status 404", async () => {
+    vi.mocked(usersRepo.deleteUser).mockResolvedValue(null);
+
+    await expect(usersService.deleteUser(admin, "nope")).rejects.toMatchObject({
+      status: 404,
+    });
   });
 });

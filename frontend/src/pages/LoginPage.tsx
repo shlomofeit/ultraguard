@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import type { Location } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import AuthForm from "../components/AuthForm";
 import Logo from "../components/Logo";
@@ -10,12 +11,14 @@ const LoginPage = () => {
   const error = useAuthStore((state) => state.error);
   const setLogin = useAuthStore((state) => state.setLogin);
   const nav = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: Location } | null)?.from;
 
   useEffect(() => {
     if (user) {
-      nav("/", { replace: true });
+      nav(from ? `${from.pathname}${from.hash}` : "/", { replace: true });
     }
-  }, [user, nav]);
+  }, [user, nav, from]);
 
   return (
     <main className="auth-page">

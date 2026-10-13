@@ -1,30 +1,35 @@
-import type { ManagedUser, UserRole } from "../types/user";
+import type { ManagedUser } from "../types/user";
 import type { Room } from "../types/room";
 
 interface UsersTableProps {
   users: ManagedUser[];
   rooms: Room[];
   currentUserId: string;
-  onRoomsChange: (user: ManagedUser, roomIds: string[]) => void;
-  onRoleChange: (user: ManagedUser, role: UserRole) => void;
+  editingId: string | null;
+  onEdit: (user: ManagedUser) => void;
+  onDelete: (user: ManagedUser) => void;
 }
 
 const UsersTable = ({
   users,
   rooms,
   currentUserId,
-  onRoomsChange,
-  onRoleChange,
+  editingId,
+  onEdit,
+  onDelete,
 }: UsersTableProps) => {
   if (users.length === 0) {
-    return <p>עוד אין משתמשים</p>;
+    return <p className="note">עוד אין משתמשים</p>;
   }
 
-  const handleRoomToggle = (user: ManagedUser, roomId: string) => {
-    const roomIds = user.roomIds.includes(roomId)
-      ? user.roomIds.filter((id) => id !== roomId)
-      : [...user.roomIds, roomId];
-    onRoomsChange(user, roomIds);
+  const getRoomNames = (user: ManagedUser) => {
+    if (user.role === "admin") {
+      return "כל החדרים";
+    }
+    const names = rooms
+      .filter((room) => user.roomIds.includes(room.id))
+      .map((room) => room.name);
+    return names.length > 0 ? names.join(", ") : "אין חדרים";
   };
 
   return (
@@ -34,44 +39,36 @@ const UsersTable = ({
           <th>שם</th>
           <th>אימייל</th>
           <th>תפקיד</th>
-          <th>חדרים שהוא רואה</th>
+          <th>חדרים</th>
+          <th>פעולות</th>
         </tr>
       </thead>
       <tbody>
-        {users.map((user) => (
-          <tr key={user.id}>
-            <td>{user.name}</td>
-            <td dir="ltr">{user.email}</td>
-            <td>
-              <select
-                value={user.role}
-                disabled={user.id === currentUserId}
-                onChange={(e) => onRoleChange(user, e.target.value as UserRole)}
-              >
-                <option value="viewer">צופה</option>
-                <option value="admin">מנהל</option>
-              </select>
-            </td>
-            <td>
-              {user.role === "admin" ? (
-                "כל החדרים"
-              ) : (
-                <div className="row-actions">
-                  {rooms.map((room) => (
-                    <label key={room.id} className="check">
-                      <input
-                        type="checkbox"
-                        checked={user.roomIds.includes(room.id)}
-                        onChange={() => handleRoomToggle(user, room.id)}
-                      />
-                      {room.name}
-                    </label>
-                  ))}
-                </div>
-              )}
-            </td>
-          </tr>
-        ))}
+        {users.map((user) => {
+          const isSelf = user.id === currentUserId;
+          const isEditing = user.id === editingId;
+          return (
+            <tr key={user.id} className={isEditing ? "editing" : ""}>
+              <td>{isSelf ? `${user.name} (אתה)` : user.name}</td>
+              <td dir="ltr">{user.email}</td>
+              <td>{user.role === "admin" ? "מנהל" : "צופה"}</td>
+              <td>{getRoomNames(user)}</td>
+              <td className="row-actions">
+                <button disabled={isEditing} onClick={() => onEdit(user)}>
+                  {isEditing ? "בעריכה…" : "ערוך"}
+                </button>
+                <button
+                  className="danger"
+                  disabled={isSelf}
+                  title={isSelf ? "אי אפשר למחוק את עצמך" : undefined}
+                  onClick={() => onDelete(user)}
+                >
+                  מחק
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

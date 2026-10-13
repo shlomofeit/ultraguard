@@ -1,6 +1,9 @@
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useListenerStore } from "../store/listenerStore";
 import DetectionList from "../components/DetectionList";
 import DeviceKeyForm from "../components/DeviceKeyForm";
+import DeviceKeyCard from "../components/DeviceKeyCard";
 import Radar from "../components/Radar";
 import Spectrum from "../components/Spectrum";
 import LiveWave from "../components/LiveWave";
@@ -23,7 +26,38 @@ const ListenPage = () => {
   const queueSize = useListenerStore((state) => state.queueSize);
   const isRejected = useListenerStore((state) => state.isRejected);
   const deviceKey = useListenerStore((state) => state.deviceKey);
+  const keyStatus = useListenerStore((state) => state.keyStatus);
+  const keyInfo = useListenerStore((state) => state.keyInfo);
+  const keyError = useListenerStore((state) => state.keyError);
   const setDeviceKey = useListenerStore((state) => state.setDeviceKey);
+  const setCheckedDeviceKey = useListenerStore(
+    (state) => state.setCheckedDeviceKey,
+  );
+  const removeDeviceKey = useListenerStore((state) => state.removeDeviceKey);
+  const location = useLocation();
+  const nav = useNavigate();
+
+  useEffect(() => {
+    const keyFromLink = new URLSearchParams(location.hash.slice(1)).get("key");
+    if (!keyFromLink) {
+      setCheckedDeviceKey();
+      return;
+    }
+    nav("/listen", { replace: true });
+    if (!isListening) {
+      removeDeviceKey();
+      setDeviceKey(keyFromLink);
+    }
+  }, [
+    location.hash,
+    isListening,
+    nav,
+    setDeviceKey,
+    setCheckedDeviceKey,
+    removeDeviceKey,
+  ]);
+
+  const isKeyFormVisible = !deviceKey;
 
   const isOnline = isListening && isConnected && !isRejected;
 
@@ -57,11 +91,6 @@ const ListenPage = () => {
           יכול לזהות ביקונים. כדאי להאזין מטלפון.
         </p>
       )}
-      {isRejected && (
-        <p className="form-error">
-          השרת דחה את מפתח המכשיר. בדוק אותו בדף הניהול.
-        </p>
-      )}
 
       <div className="listen-grid">
         <section className="glass scope">
@@ -90,13 +119,25 @@ const ListenPage = () => {
 
         <section className="glass panel">
           <h2>מפתח מכשיר</h2>
-          <p className="note">
-            מקבלים אותו מהמנהל בדף הניהול. נשמר בדפדפן הזה בלבד.
-          </p>
-          {isListening ? (
-            <p className="note">כדי להחליף מפתח, עצור קודם את ההאזנה.</p>
+          {isKeyFormVisible ? (
+            <>
+              <p className="note">
+                מקבלים אותו מהמנהל בדף הניהול. נשמר בדפדפן הזה בלבד.
+              </p>
+              <DeviceKeyForm
+                isChecking={keyStatus === "checking"}
+                error={keyError}
+                onSubmit={setDeviceKey}
+              />
+            </>
           ) : (
-            <DeviceKeyForm deviceKey={deviceKey} onSave={setDeviceKey} />
+            <DeviceKeyCard
+              deviceKey={deviceKey}
+              keyInfo={keyInfo}
+              status={keyStatus}
+              canReplace={!isListening}
+              onReplace={removeDeviceKey}
+            />
           )}
         </section>
       </div>

@@ -38,23 +38,23 @@ const RoomForm = ({ room, isLoading, onSubmit, onCancel }: RoomFormProps) => {
         handleSubmit();
       }}
     >
-      <label htmlFor="room-name">
-        {room ? `שם חדש לחדר "${room.name}"` : "שם חדר חדש"}
-      </label>
+      <label htmlFor="room-name">שם החדר</label>
       <input
         id="room-name"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
       {errors.name && <p className="form-error">{errors.name}</p>}
-      <button type="submit" disabled={isLoading}>
-        {room ? "שמור שם" : "הוסף חדר"}
-      </button>
-      {room && (
-        <button type="button" onClick={onCancel}>
-          ביטול
+      <div className="row-actions">
+        <button type="submit" className="primary" disabled={isLoading}>
+          {room ? "שמור" : "הוסף חדר"}
         </button>
-      )}
+        {room && (
+          <button type="button" onClick={onCancel}>
+            ביטול
+          </button>
+        )}
+      </div>
     </form>
   );
 };

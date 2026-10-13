@@ -70,10 +70,26 @@ async function updateUser(id, changes) {
   return data;
 }
 
+async function deleteUser(id) {
+  const { data, error } = await supabase
+    .from('users')
+    .delete()
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 export const usersRepo = {
   getUserByEmail,
   getUserById,
   createUser,
   getUsers,
   updateUser,
+  deleteUser,
 };

@@ -1,5 +1,10 @@
 import axios from "axios";
-import type { CreatedDevice, Device, DeviceInput } from "../types/device";
+import type {
+  CreatedDevice,
+  Device,
+  DeviceInput,
+  DeviceKeyInfo,
+} from "../types/device";
 
 const BASE_URL = `${import.meta.env.VITE_API_URL}/api/devices`;
 
@@ -16,6 +21,27 @@ export const createDevice = async (
   const { data } = await axios.post<CreatedDevice>(BASE_URL, input, {
     withCredentials: true,
   });
+  return data;
+};
+
+export const updateDevice = async (
+  id: string,
+  input: Omit<DeviceInput, "kind">,
+): Promise<Device> => {
+  const { data } = await axios.patch<Device>(`${BASE_URL}/${id}`, input, {
+    withCredentials: true,
+  });
+  return data;
+};
+
+export const verifyDeviceKey = async (
+  deviceKey: string,
+): Promise<DeviceKeyInfo> => {
+  const { data } = await axios.post<DeviceKeyInfo>(
+    `${BASE_URL}/verify`,
+    { deviceKey },
+    { withCredentials: true },
+  );
   return data;
 };
 
