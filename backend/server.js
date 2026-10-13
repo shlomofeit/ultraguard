@@ -13,6 +13,8 @@ const io = new Server(httpServer, {
   cors: { credentials: true, origin: process.env.CLIENT_ORIGIN },
 });
 
+app.set('io', io);
+
 registerListenerSocket(io);
 registerLiveSocket(io);
 

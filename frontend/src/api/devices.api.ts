@@ -52,6 +52,13 @@ export const revokeDevice = async (id: string): Promise<Device> => {
   return data;
 };
 
+export const replaceDeviceKey = async (id: string): Promise<CreatedDevice> => {
+  const { data } = await axios.post<CreatedDevice>(`${BASE_URL}/${id}/key`, null, {
+    withCredentials: true,
+  });
+  return data;
+};
+
 export const deleteDevice = async (id: string): Promise<Device> => {
   const { data } = await axios.delete<Device>(`${BASE_URL}/${id}`, {
     withCredentials: true,

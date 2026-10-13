@@ -13,6 +13,16 @@ import { roomsService } from "../services/rooms.service.js";
 
 const STATUS_CHECK_MS = 5000;
 
+export async function disconnectDevice(io, deviceId) {
+  const sockets = await io.of("/listener").fetchSockets();
+
+  for (const socket of sockets) {
+    if (socket.data.device.id === deviceId) {
+      socket.disconnect(true);
+    }
+  }
+}
+
 export function registerListenerSocket(io) {
   const listeners = io.of("/listener");
 

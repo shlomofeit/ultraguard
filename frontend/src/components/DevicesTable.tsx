@@ -8,6 +8,7 @@ interface DevicesTableProps {
   editingId: string | null;
   onEdit: (device: Device) => void;
   onRevoke: (device: Device) => void;
+  onReplaceKey: (device: Device) => void;
   onDelete: (device: Device) => void;
 }
 
@@ -33,6 +34,7 @@ const DevicesTable = ({
   editingId,
   onEdit,
   onRevoke,
+  onReplaceKey,
   onDelete,
 }: DevicesTableProps) => {
   if (devices.length === 0) {
@@ -68,8 +70,15 @@ const DevicesTable = ({
                 <button disabled={isEditing} onClick={() => onEdit(device)}>
                   {isEditing ? "בעריכה…" : "ערוך"}
                 </button>
-                {!device.revokedAt && (
-                  <button onClick={() => onRevoke(device)}>בטל מפתח</button>
+                {device.revokedAt ? (
+                  <button className="primary" onClick={() => onReplaceKey(device)}>
+                    צור מפתח חדש
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={() => onReplaceKey(device)}>החלף מפתח</button>
+                    <button onClick={() => onRevoke(device)}>בטל מפתח</button>
+                  </>
                 )}
                 <button className="danger" onClick={() => onDelete(device)}>
                   מחק

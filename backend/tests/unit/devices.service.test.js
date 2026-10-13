@@ -176,6 +176,41 @@ describe("devicesService", () => {
     expect(devicesRepo.deleteDevice).not.toHaveBeenCalled();
   });
 
+  it("replaces a key, brings a revoked device back and returns the new key once", async () => {
+    vi.mocked(devicesRepo.updateDevice).mockImplementation(
+      async (id, changes) => ({ ...deviceRow, ...changes }),
+    );
+
+    const { device, deviceKey } =
+      await devicesService.replaceDeviceKey("device-1");
+
+    const [id, changes] = vi.mocked(devicesRepo.updateDevice).mock.calls[0];
+    expect(id).toBe("device-1");
+    expect(changes).toEqual({
+      key_hash: hashDeviceKey(deviceKey),
+      revoked_at: null,
+    });
+    expect(deviceKey.length).toBeGreaterThanOrEqual(32);
+    expect(device.revokedAt).toBeNull();
+  });
+
+  it("gives a different key every time", async () => {
+    vi.mocked(devicesRepo.updateDevice).mockResolvedValue(deviceRow);
+
+    const first = await devicesService.replaceDeviceKey("device-1");
+    const second = await devicesService.replaceDeviceKey("device-1");
+
+    expect(first.deviceKey).not.toBe(second.deviceKey);
+  });
+
+  it("rejects replacing the key of a missing device with status 404", async () => {
+    vi.mocked(devicesRepo.updateDevice).mockResolvedValue(null);
+
+    await expect(
+      devicesService.replaceDeviceKey("nope"),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
   it("deletes a device", async () => {
     vi.mocked(devicesRepo.deleteDevice).mockResolvedValue(deviceRow);
 

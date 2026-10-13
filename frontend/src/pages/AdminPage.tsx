@@ -36,6 +36,9 @@ const AdminPage = () => {
   const setNewDevice = useAdminStore((state) => state.setNewDevice);
   const setEditedDevice = useAdminStore((state) => state.setEditedDevice);
   const setRevokedDevice = useAdminStore((state) => state.setRevokedDevice);
+  const setReplacedDeviceKey = useAdminStore(
+    (state) => state.setReplacedDeviceKey,
+  );
   const removeDevice = useAdminStore((state) => state.removeDevice);
   const removeNewDeviceKey = useAdminStore((state) => state.removeNewDeviceKey);
   const setEditedUser = useAdminStore((state) => state.setEditedUser);
@@ -103,9 +106,22 @@ const AdminPage = () => {
   const handleRevokeDevice = (device: Device) => {
     setPendingConfirm({
       title: `לבטל את המפתח של "${device.name}"?`,
-      text: "המכשיר יפסיק לשלוח אירועים, אבל יישאר ברשימה. אי אפשר להחזיר את המפתח.",
+      text: "המכשיר יתנתק ויפסיק לשלוח אירועים, אבל יישאר ברשימה. אפשר ליצור לו מפתח חדש אחר כך.",
       confirmText: "בטל מפתח",
       action: () => setRevokedDevice(device.id),
+    });
+  };
+
+  const handleReplaceKey = (device: Device) => {
+    if (device.revokedAt) {
+      setReplacedDeviceKey(device.id);
+      return;
+    }
+    setPendingConfirm({
+      title: `להחליף את המפתח של "${device.name}"?`,
+      text: "המפתח הנוכחי יפסיק לעבוד מיד והמכשיר יתנתק. כדי שימשיך להאזין, פותחים בו את קישור ההפעלה החדש.",
+      confirmText: "החלף מפתח",
+      action: () => setReplacedDeviceKey(device.id),
     });
   };
 
@@ -197,6 +213,7 @@ const AdminPage = () => {
                 editingId={editingDevice?.id ?? null}
                 onEdit={setEditingDevice}
                 onRevoke={handleRevokeDevice}
+                onReplaceKey={handleReplaceKey}
                 onDelete={handleDeleteDevice}
               />
             </div>
