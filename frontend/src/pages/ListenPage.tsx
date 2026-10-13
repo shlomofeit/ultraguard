@@ -13,6 +13,7 @@ const ListenPage = () => {
   const analyser = useListenerStore((state) => state.analyser);
   const startedAtMs = useListenerStore((state) => state.startedAtMs);
   const detections = useListenerStore((state) => state.detections);
+  const isMicDeaf = useListenerStore((state) => state.isMicDeaf);
   const setStartListening = useListenerStore(
     (state) => state.setStartListening,
   );
@@ -50,6 +51,12 @@ const ListenPage = () => {
       </header>
 
       {error && <p className="form-error">{error}</p>}
+      {isMicDeaf && (
+        <p className="form-error">
+          המיקרופון של המכשיר הזה לא קולט תדרים מעל 17 קילו-הרץ, ולכן הוא לא
+          יכול לזהות ביקונים. כדאי להאזין מטלפון.
+        </p>
+      )}
       {isRejected && (
         <p className="form-error">
           השרת דחה את מפתח המכשיר. בדוק אותו בדף הניהול.

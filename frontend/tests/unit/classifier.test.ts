@@ -52,13 +52,14 @@ describe("classify rules", () => {
   it("returns mosquito for two frequencies with wide frames", () => {
     const result = classify(
       makeDetection({
-        mainPeaksHz: [19500, 20500],
-        freqsHz: [19250, 19500, 19750, 20250, 20500, 20750],
+        mainPeaksHz: [18750, 19500],
+        freqsHz: [18500, 18750, 19000, 19250, 19500, 19750],
         meanFrameFreqs: 4,
         switchRate: 0.5,
       }),
     );
     expect(result.type).toBe("mosquito");
+    expect(result.confidence).toBe(1);
   });
 
   it("returns lisnr for many parallel tones in its band", () => {

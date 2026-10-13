@@ -6,10 +6,12 @@ import { checksum } from "./beaconGenerator";
 export const SEARCH_MS = 150;
 export const SEARCH_STEP_MS = 1;
 export const WINDOW_SHARE = 0.7;
-export const MIN_PREAMBLE_SCORE = 0.7;
+export const MIN_PREAMBLE_SCORE = 0.6;
 export const PLATEAU_SHARE = 0.03;
 export const LISNR_BIT_RATIO = 0.1;
 export const MIN_LISNR_EVENNESS = 0.3;
+export const UNSURE_RATIO = 2;
+export const MAX_RETRY_SYMBOLS = 2;
 export const MAX_TEXT_BEACON_MS = (MOSQUITO.maxBytes + 3) * 8 * MOSQUITO.bitMs;
 
 type TextBeaconType = "silverpush" | "mosquito" | "lisnr";
@@ -80,12 +82,72 @@ export const bytesToText = (bytes: number[]): string | null => {
   return new TextDecoder().decode(new Uint8Array(bytes.slice(0, end)));
 };
 
+export const isReadableText = (text: string): boolean =>
+  !/[\u0000-\u001f\u007f]|\ufffd(?!$)/.test(text);
+
 const checkBytes = (bytes: number[]): string | null => {
   const data = bytes.slice(0, -1);
   if (checksum(data) !== bytes[bytes.length - 1]) {
     return null;
   }
-  return bytesToText(data);
+  const text = bytesToText(data);
+  return text && isReadableText(text) ? text : null;
+};
+
+const symbolsToBytes = (symbols: number[]): number[] => {
+  const bytes: number[] = [];
+  for (let i = 0; i < symbols.length; i += 4) {
+    bytes.push(
+      (symbols[i] << 6) |
+        (symbols[i + 1] << 4) |
+        (symbols[i + 2] << 2) |
+        symbols[i + 3],
+    );
+  }
+  return bytes;
+};
+
+const readSilverpushData = (
+  readSymbol: (start: number) => number[],
+  dataStart: number,
+  symbolLength: number,
+): string | null => {
+  const symbolCount = (SILVERPUSH.payloadBytes + 1) * 4;
+  const best: number[] = [];
+  const second: number[] = [];
+  const ratios: number[] = [];
+  for (let i = 0; i < symbolCount; i++) {
+    const powers = readSymbol(dataStart + i * symbolLength);
+    const order = powers
+      .map((_, tone) => tone)
+      .sort((a, b) => powers[b] - powers[a]);
+    best.push(order[0]);
+    second.push(order[1]);
+    ratios.push(
+      powers[order[0]] / Math.max(powers[order[1]], Number.MIN_VALUE),
+    );
+  }
+
+  const unsure = ratios
+    .map((ratio, index) => ({ ratio, index }))
+    .filter(({ ratio }) => ratio < UNSURE_RATIO)
+    .sort((a, b) => a.ratio - b.ratio)
+    .slice(0, MAX_RETRY_SYMBOLS)
+    .map(({ index }) => index);
+
+  for (let mask = 0; mask < 1 << unsure.length; mask++) {
+    const symbols = [...best];
+    unsure.forEach((index, bit) => {
+      if (mask & (1 << bit)) {
+        symbols[index] = second[index];
+      }
+    });
+    const text = checkBytes(symbolsToBytes(symbols));
+    if (text) {
+      return text;
+    }
+  }
+  return null;
 };
 
 const decodeSilverpush = (samples: Float32Array, sampleRate: number) => {
@@ -103,17 +165,11 @@ const decodeSilverpush = (samples: Float32Array, sampleRate: number) => {
     return null;
   }
 
-  const dataStart = offset + SILVERPUSH.preamble.length * symbolLength;
-  const bytes: number[] = [];
-  for (let byte = 0; byte <= SILVERPUSH.payloadBytes; byte++) {
-    let value = 0;
-    for (let i = 0; i < 4; i++) {
-      const powers = readSymbol(dataStart + (byte * 4 + i) * symbolLength);
-      value = (value << 2) | powers.indexOf(Math.max(...powers));
-    }
-    bytes.push(value);
-  }
-  return checkBytes(bytes);
+  return readSilverpushData(
+    readSymbol,
+    offset + SILVERPUSH.preamble.length * symbolLength,
+    symbolLength,
+  );
 };
 
 const decodeMosquito = (samples: Float32Array, sampleRate: number) => {
