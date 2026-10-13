@@ -5,6 +5,7 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import { router as alertsRouter } from "./routes/alerts.routes.js";
 import { router as authRouter } from "./routes/auth.routes.js";
 import { router as devicesRouter } from "./routes/devices.routes.js";
 import { router as eventsRouter } from "./routes/events.routes.js";
@@ -24,6 +25,7 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/api/alerts", alertsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/devices", devicesRouter);
 app.use("/api/events", eventsRouter);

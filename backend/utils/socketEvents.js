@@ -7,3 +7,4 @@ export const LIVE_UNWATCH = "live:unwatch";
 export const LIVE_EVENT = "live:event";
 export const LIVE_SPECTROGRAM = "live:spectrogram";
 export const LIVE_ROOM_STATUS = "live:room-status";
+export const LIVE_ALERT = "live:alert";

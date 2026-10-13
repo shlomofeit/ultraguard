@@ -45,4 +45,39 @@ async function getEvents(filter) {
   return data;
 }
 
-export const eventsRepo = { createEvent, getEvents };
+async function countEventsSince(roomId, since) {
+  const { count, error } = await supabase
+    .from('events')
+    .select('id', { count: 'exact', head: true })
+    .eq('room_id', roomId)
+    .gte('started_at', since);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return count;
+}
+
+async function getLastEvent(roomId) {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('room_id', roomId)
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export const eventsRepo = {
+  createEvent,
+  getEvents,
+  countEventsSince,
+  getLastEvent,
+};
