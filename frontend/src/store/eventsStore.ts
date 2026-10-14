@@ -17,6 +17,7 @@ import { matchesFilter } from "../utils/eventFilter";
 const LIVE_URL = `${import.meta.env.VITE_API_URL}/live`;
 
 export const MAX_EVENTS = 200;
+export const ALL_ROOMS = "all";
 const DEFAULT_FILTER: EventFilter = { type: "all", rangeHours: 24 };
 
 interface EventsStore {
@@ -24,7 +25,7 @@ interface EventsStore {
   events: Event[];
   selectedRoomId: string | null;
   isLive: boolean;
-  activeDevices: number;
+  activeByRoom: Record<string, number>;
   isLoading: boolean;
   error: string | null;
   filter: EventFilter;
@@ -37,6 +38,13 @@ interface EventsStore {
 let socket: Socket | null = null;
 let hasRetriedLogin = false;
 
+const getWatchedRoomIds = (roomId: string | null, rooms: Room[]) => {
+  if (roomId === ALL_ROOMS) {
+    return rooms.map((room) => room.id);
+  }
+  return roomId ? [roomId] : [];
+};
+
 export const useEventsStore = create<EventsStore>((set, get) => {
   const connectLive = (): Socket => {
     if (socket) {
@@ -46,12 +54,12 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     socket.on("connect", () => {
       hasRetriedLogin = false;
       set({ isLive: true });
-      const roomId = get().selectedRoomId;
-      if (roomId) {
+      const { selectedRoomId, rooms } = get();
+      for (const roomId of getWatchedRoomIds(selectedRoomId, rooms)) {
         socket?.emit(LIVE_WATCH, roomId);
       }
     });
-    socket.on("disconnect", () => set({ isLive: false, activeDevices: 0 }));
+    socket.on("disconnect", () => set({ isLive: false, activeByRoom: {} }));
     socket.on("connect_error", async () => {
       if (!socket || socket.active || hasRetriedLogin) {
         return;
@@ -65,15 +73,21 @@ export const useEventsStore = create<EventsStore>((set, get) => {
       }
     });
     socket.on(LIVE_ROOM_STATUS, (status: RoomStatus) => {
-      if (status.roomId === get().selectedRoomId) {
-        set({ activeDevices: status.activeDevices });
-      }
+      set((state) => ({
+        activeByRoom: {
+          ...state.activeByRoom,
+          [status.roomId]: status.activeDevices,
+        },
+      }));
     });
     socket.on(LIVE_EVENT, (event: Event) => {
       set((state) => {
         const isDuplicate = state.events.some((item) => item.id === event.id);
+        const isWatched =
+          state.selectedRoomId === ALL_ROOMS ||
+          event.roomId === state.selectedRoomId;
         const isVisible =
-          event.roomId === state.selectedRoomId &&
+          isWatched &&
           matchesFilter(event, state.filter, Date.now());
         if (!isVisible || isDuplicate) {
           return state;
@@ -89,7 +103,7 @@ export const useEventsStore = create<EventsStore>((set, get) => {
     events: [],
     selectedRoomId: null,
     isLive: false,
-    activeDevices: 0,
+    activeByRoom: {},
     isLoading: false,
     error: null,
     filter: DEFAULT_FILTER,
@@ -103,7 +117,7 @@ export const useEventsStore = create<EventsStore>((set, get) => {
         if (roomId && isKnownRoom) {
           get().setSelectedRoom(roomId);
         } else if (!get().selectedRoomId && rooms.length > 0) {
-          get().setSelectedRoom(rooms[0].id);
+          get().setSelectedRoom(rooms.length > 1 ? ALL_ROOMS : rooms[0].id);
         }
       } catch (err) {
         set({
@@ -115,20 +129,24 @@ export const useEventsStore = create<EventsStore>((set, get) => {
 
     setSelectedRoom: async (roomId) => {
       const live = connectLive();
-      const previousRoomId = get().selectedRoomId;
-      if (previousRoomId) {
+      const { selectedRoomId, rooms } = get();
+      for (const previousRoomId of getWatchedRoomIds(selectedRoomId, rooms)) {
         live.emit(LIVE_UNWATCH, previousRoomId);
       }
-      live.emit(LIVE_WATCH, roomId);
+      for (const watchedRoomId of getWatchedRoomIds(roomId, rooms)) {
+        live.emit(LIVE_WATCH, watchedRoomId);
+      }
       set({
         selectedRoomId: roomId,
         events: [],
-        activeDevices: 0,
         isLoading: true,
         error: null,
       });
       try {
-        const events = await getEvents(roomId, get().filter);
+        const events = await getEvents(
+          roomId === ALL_ROOMS ? null : roomId,
+          get().filter,
+        );
         if (get().selectedRoomId === roomId) {
           set({ events, isLoading: false });
         }
@@ -153,7 +171,7 @@ export const useEventsStore = create<EventsStore>((set, get) => {
       socket = null;
       set({
         isLive: false,
-        activeDevices: 0,
+        activeByRoom: {},
         selectedRoomId: null,
         events: [],
       });

@@ -16,12 +16,19 @@ interface SideNavProps {
   onLogout: () => void;
 }
 
-const LINKS = [
-  { to: "/rooms", label: "מפת חדרים", adminOnly: false },
-  { to: "/dashboard", label: "דשבורד", adminOnly: false },
-  { to: "/listen", label: "האזנה", adminOnly: false },
-  { to: "/admin", label: "ניהול", adminOnly: true },
-  { to: "/beacons", label: "מחולל ביקונים", adminOnly: false, isBeta: true },
+const ADMIN_LINKS = [
+  { to: "/rooms", label: "מפת חדרים" },
+  { to: "/stats", label: "סטטיסטיקות" },
+  { to: "/listen", label: "האזנה" },
+  { to: "/admin", label: "ניהול" },
+  { to: "/beacons", label: "מחולל ביקונים", isBeta: true },
+];
+
+const VIEWER_LINKS = [
+  { to: "/listen", label: "האזנה" },
+  { to: "/rooms", label: "החדרים שלי" },
+  { to: "/stats", label: "סטטיסטיקות" },
+  { to: "/beacons", label: "מחולל ביקונים", isBeta: true },
 ];
 
 const ROLE_LABELS = {
@@ -39,9 +46,7 @@ const SideNav = ({
   onAllAlertsRead,
   onLogout,
 }: SideNavProps) => {
-  const visibleLinks = LINKS.filter(
-    (link) => !link.adminOnly || user.role === "admin",
-  );
+  const visibleLinks = user.role === "admin" ? ADMIN_LINKS : VIEWER_LINKS;
 
   return (
     <nav className="top-nav">

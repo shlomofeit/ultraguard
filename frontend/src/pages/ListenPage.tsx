@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useListenerStore } from "../store/listenerStore";
+import { useRoomStatusStore } from "../store/roomStatusStore";
+import RoomCard from "../components/RoomCard";
 import DetectionList from "../components/DetectionList";
 import DeviceKeyForm from "../components/DeviceKeyForm";
 import DeviceKeyCard from "../components/DeviceKeyCard";
@@ -34,6 +36,7 @@ const ListenPage = () => {
     (state) => state.setCheckedDeviceKey,
   );
   const removeDeviceKey = useListenerStore((state) => state.removeDeviceKey);
+  const statuses = useRoomStatusStore((state) => state.statuses);
   const location = useLocation();
   const nav = useNavigate();
 
@@ -58,6 +61,13 @@ const ListenPage = () => {
   ]);
 
   const isKeyFormVisible = !deviceKey;
+  const deviceRoom = statuses.find(
+    (status) => status.roomName === keyInfo?.roomName,
+  );
+
+  const handleOpenRoom = (roomId: string) => {
+    nav(`/stats?room=${roomId}`);
+  };
 
   const isOnline = isListening && isConnected && !isRejected;
 
@@ -118,6 +128,16 @@ const ListenPage = () => {
         </section>
 
         <section className="glass panel">
+          {deviceRoom && (
+            <div className="device-room">
+              <h2>החדר של המכשיר הזה</h2>
+              <RoomCard
+                status={deviceRoom}
+                nowMs={Date.now()}
+                onOpen={handleOpenRoom}
+              />
+            </div>
+          )}
           <h2>מפתח מכשיר</h2>
           {isKeyFormVisible ? (
             <>
