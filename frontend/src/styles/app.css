@@ -573,6 +573,16 @@ button.primary:hover {
   white-space: nowrap;
 }
 
+.event-list.with-room {
+  --columns: 5.2rem minmax(5rem, 0.8fr) minmax(7rem, 1fr) 5.5rem 4.5rem 3.5rem
+    minmax(3rem, auto);
+}
+
+.event-row .room-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .event-list-head {
   padding-bottom: 0.4rem;
   color: var(--dim);
@@ -1441,6 +1451,13 @@ button.danger:hover {
 
 .room-card.active {
   --c: var(--ok);
+}
+
+.device-room {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
 }
 
 .room-card.silent,

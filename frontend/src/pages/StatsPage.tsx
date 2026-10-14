@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useEventsStore } from "../store/eventsStore";
+import { ALL_ROOMS, useEventsStore } from "../store/eventsStore";
 import EventsTable from "../components/EventsTable";
 import EventsFilterBar from "../components/EventFilterBar";
 import StatCard from "../components/StatCard";
@@ -12,12 +12,12 @@ import { EVENT_TYPE_LABELS } from "../utils/eventTypeLabels";
 
 const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("he-IL");
 
-const DashboardPage = () => {
+const StatsPage = () => {
   const rooms = useEventsStore((state) => state.rooms);
   const events = useEventsStore((state) => state.events);
   const selectedRoomId = useEventsStore((state) => state.selectedRoomId);
   const isLive = useEventsStore((state) => state.isLive);
-  const activeDevices = useEventsStore((state) => state.activeDevices);
+  const activeByRoom = useEventsStore((state) => state.activeByRoom);
   const isLoading = useEventsStore((state) => state.isLoading);
   const error = useEventsStore((state) => state.error);
   const filter = useEventsStore((state) => state.filter);
@@ -33,7 +33,16 @@ const DashboardPage = () => {
     return () => setStopLive();
   }, [roomFromLink, setRooms, setStopLive]);
 
-  const roomName = rooms.find((room) => room.id === selectedRoomId)?.name;
+  const isAllRooms = selectedRoomId === ALL_ROOMS;
+  const roomNames = Object.fromEntries(
+    rooms.map((room) => [room.id, room.name]),
+  );
+  const title = isAllRooms
+    ? "כל החדרים"
+    : (roomNames[selectedRoomId ?? ""] ?? "סטטיסטיקות");
+  const activeDevices = isAllRooms
+    ? Object.values(activeByRoom).reduce((sum, count) => sum + count, 0)
+    : (activeByRoom[selectedRoomId ?? ""] ?? 0);
   const lastEvent = events[0];
   const lastPayload = events.find((event) => event.payload)?.payload;
   const trend = countRecentEvents(events, Date.now());
@@ -45,17 +54,18 @@ const DashboardPage = () => {
       return "אין חיבור לשרת";
     }
     if (activeDevices === 0) {
-      return "אין מכשיר מאזין בחדר";
+      return isAllRooms ? "אין מכשיר מאזין באף חדר" : "אין מכשיר מאזין בחדר";
     }
     const devicesText =
       activeDevices === 1 ? "מכשיר אחד" : `${activeDevices} מכשירים`;
-    return `מאזין לחדר בזמן אמת · ${devicesText}`;
+    const target = isAllRooms ? "לכל החדרים" : "לחדר";
+    return `מאזין ${target} בזמן אמת · ${devicesText}`;
   };
 
   return (
-    <main className="dashboard-page">
+    <main className="stats-page">
       <header className="page-head">
-        <h1>{roomName ?? "דשבורד"}</h1>
+        <h1>{title}</h1>
         <span className={isRoomListening ? "live on" : "live"}>
           <LiveWave analyser={null} />
           {getLiveText()}
@@ -69,6 +79,7 @@ const DashboardPage = () => {
           value={selectedRoomId ?? ""}
           onChange={(e) => setSelectedRoom(e.target.value)}
         >
+          {rooms.length > 1 && <option value={ALL_ROOMS}>כל החדרים</option>}
           {rooms.map((room) => (
             <option key={room.id} value={room.id}>
               {room.name}
@@ -119,7 +130,7 @@ const DashboardPage = () => {
           <h2>מפל תדרים</h2>
           <small>כל הבזק הוא אירוע חדש. הזמן זורם למטה.</small>
         </div>
-        <Waterfall events={events} />
+        <Waterfall events={events} roomNames={isAllRooms ? roomNames : null} />
       </section>
 
       <div className="columns">
@@ -128,7 +139,10 @@ const DashboardPage = () => {
           {isLoading ? (
             <p className="empty">טוען...</p>
           ) : (
-            <EventsTable events={events} />
+            <EventsTable
+              events={events}
+              roomNames={isAllRooms ? roomNames : null}
+            />
           )}
         </section>
         <section className="glass panel">
@@ -141,4 +155,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default StatsPage;

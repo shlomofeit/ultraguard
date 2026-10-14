@@ -12,6 +12,7 @@ import { fromShare, toShare } from "../utils/frequencyRange";
 
 interface WaterfallProps {
   events: Event[];
+  roomNames: Record<string, string> | null;
 }
 
 interface Flash {
@@ -23,6 +24,7 @@ interface Flash {
 
 interface Tag {
   id: string;
+  roomId: string;
   type: EventType;
   peakFreqHz: number;
   dropPx: number;
@@ -39,7 +41,7 @@ const toRgba = (hex: string, alpha: number) => {
   return `rgba(${value >> 16}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
 };
 
-const Waterfall = ({ events }: WaterfallProps) => {
+const Waterfall = ({ events, roomNames }: WaterfallProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const flashesRef = useRef<Flash[]>([]);
   const seenIdsRef = useRef(new Set<string>());
@@ -65,6 +67,7 @@ const Waterfall = ({ events }: WaterfallProps) => {
       });
       newTags.push({
         id: event.id,
+        roomId: event.roomId,
         type: event.type,
         peakFreqHz: event.peakFreqHz,
         dropPx: height,
@@ -195,6 +198,7 @@ const Waterfall = ({ events }: WaterfallProps) => {
               style={style}
               onAnimationEnd={() => removeTag(tag.id)}
             >
+              {roomNames && `${roomNames[tag.roomId] ?? ""} · `}
               {EVENT_TYPE_LABELS[tag.type]} ·{" "}
               {(tag.peakFreqHz / 1000).toFixed(1)}k
             </span>

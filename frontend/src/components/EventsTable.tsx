@@ -5,6 +5,7 @@ import { EVENT_TYPE_COLORS } from "../utils/eventTypeColors";
 
 interface EventsTableProps {
   events: Event[];
+  roomNames: Record<string, string> | null;
 }
 
 const NEW_EVENT_MS = 5000;
@@ -14,15 +15,20 @@ const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("he-IL");
 const isNewEvent = (event: Event) =>
   Date.now() - Date.parse(event.receivedAt) < NEW_EVENT_MS;
 
-const EventsTable = ({ events }: EventsTableProps) => {
+const EventsTable = ({ events, roomNames }: EventsTableProps) => {
   if (events.length === 0) {
-    return <p className="empty">אין עדיין אירועים בחדר הזה</p>;
+    return (
+      <p className="empty">
+        {roomNames ? "אין עדיין אירועים" : "אין עדיין אירועים בחדר הזה"}
+      </p>
+    );
   }
 
   return (
-    <div className="event-list">
+    <div className={roomNames ? "event-list with-room" : "event-list"}>
       <div className="event-list-head">
         <span>שעה</span>
+        {roomNames && <span>חדר</span>}
         <span>סוג</span>
         <span>תדר שיא</span>
         <span>משך</span>
@@ -36,6 +42,9 @@ const EventsTable = ({ events }: EventsTableProps) => {
             className={isNewEvent(event) ? "event-row is-new" : "event-row"}
           >
             <span className="mono time">{formatTime(event.startedAt)}</span>
+            {roomNames && (
+              <span className="room-name">{roomNames[event.roomId] ?? "–"}</span>
+            )}
             <span
               className="type-badge"
               style={{ "--c": EVENT_TYPE_COLORS[event.type] } as CSSProperties}

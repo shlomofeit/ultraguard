@@ -12,7 +12,7 @@ const RegisterPage = () => {
 
   useEffect(() => {
     if (user) {
-      nav("/dashboard", { replace: true });
+      nav("/", { replace: true });
     }
   }, [user, nav]);
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRoomStatusStore } from "../store/roomStatusStore";
+import { useAuthStore } from "../store/authStore";
 import RoomCard from "../components/RoomCard";
 import type { RoomState } from "../types/room";
 import { sortRoomStatuses } from "../utils/sortRoomStatuses";
@@ -12,6 +13,7 @@ const RoomsMapPage = () => {
   const isLoading = useRoomStatusStore((state) => state.isLoading);
   const error = useRoomStatusStore((state) => state.error);
   const setRoomsStatus = useRoomStatusStore((state) => state.setRoomsStatus);
+  const user = useAuthStore((state) => state.user);
   const [nowMs, setNowMs] = useState(Date.now());
   const nav = useNavigate();
 
@@ -28,14 +30,14 @@ const RoomsMapPage = () => {
     statuses.filter((status) => status.state === state).length;
 
   const handleOpen = (roomId: string) => {
-    nav(`/dashboard?room=${roomId}`);
+    nav(`/stats?room=${roomId}`);
   };
 
   return (
     <main className="rooms-map-page">
       <header className="page-head">
         <div>
-          <h1>מפת חדרים</h1>
+          <h1>{user?.role === "admin" ? "מפת חדרים" : "החדרים שלי"}</h1>
           <p>מצב חי של כל החדרים. חדר שמפסיק לדווח מסומן באדום ומקפיץ התראה.</p>
         </div>
         <div className="map-summary">

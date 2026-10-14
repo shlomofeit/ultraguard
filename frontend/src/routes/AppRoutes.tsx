@@ -1,7 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import BeaconGeneratorPage from "../pages/BeaconGeneratorPage";
 import ListenPage from "../pages/ListenPage";
-import DashboardPage from "../pages/DashboardPage";
+import StatsPage from "../pages/StatsPage";
+import HomeRedirect from "./HomeRedirect";
 import ProtectedRoute from "./ProtectedRoutes";
 import AppLayout from "./AppLayout";
 import LoginPage from "../pages/LoginPage";
@@ -17,11 +18,11 @@ const AppRoutes = () => {
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
-            <Route index element={<Navigate to="/rooms" replace />} />
+            <Route index element={<HomeRedirect />} />
             <Route path="/rooms" element={<RoomsMapPage />} />
             <Route path="/beacons" element={<BeaconGeneratorPage />} />
             <Route path="/listen" element={<ListenPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/stats" element={<StatsPage />} />
             <Route element={<ProtectedRoute adminOnly />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>
