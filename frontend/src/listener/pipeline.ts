@@ -158,8 +158,11 @@ export const toSighting = (detection: PipelineDetection): Sighting => {
   };
 };
 
+const roundTo = (value: number, digits: number) =>
+  Math.round(value * 10 ** digits) / 10 ** digits;
+
 export const toEventInput = (
-  detection: PipelineDetection,
+  detection: CheckedDetection,
   startedAtMs: number,
   sampleRate: number,
 ): EventInput => {
@@ -176,5 +179,15 @@ export const toEventInput = (
     snrDb: Math.round(detection.maxSnrDb * 10) / 10,
     payload: detection.payload,
     sampleRate,
+    features: {
+      meanEntropy: roundTo(detection.meanEntropy, 3),
+      isStable: detection.isStable,
+      isSweep: detection.isSweep,
+      mainPeaksHz: detection.mainPeaksHz.slice(0, MAX_EVENT_FREQS),
+      meanFrameFreqs: roundTo(detection.meanFrameFreqs, 2),
+      switchRate: roundTo(detection.switchRate, 3),
+      decodedType: detection.decodedType,
+      suspicion: detection.suspicion,
+    },
   };
 };

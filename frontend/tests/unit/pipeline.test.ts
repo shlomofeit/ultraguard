@@ -75,7 +75,11 @@ describe("pipeline", () => {
       withSilence(generateBeacon("lisnr", "UG01", SAMPLE_RATE)),
     );
     const startedAtMs = Date.parse("2026-10-11T08:00:00.000Z");
-    const event = toEventInput(detection, startedAtMs, SAMPLE_RATE);
+    const event = toEventInput(
+      { ...detection, suspicion: "decoded" },
+      startedAtMs,
+      SAMPLE_RATE,
+    );
 
     expect(event.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(
@@ -90,6 +94,15 @@ describe("pipeline", () => {
     expect(event.confidence).toBeGreaterThanOrEqual(0.75);
     expect(event.sampleRate).toBe(SAMPLE_RATE);
     expect(event.payload).toBe("UG01");
+    expect(event.features).toMatchObject({
+      decodedType: "lisnr",
+      suspicion: "decoded",
+      isSweep: false,
+    });
+    expect(event.features?.meanEntropy).toBeGreaterThanOrEqual(0);
+    expect(event.features?.meanEntropy).toBeLessThanOrEqual(1);
+    expect(event.features?.switchRate).toBeGreaterThanOrEqual(0);
+    expect(event.features?.switchRate).toBeLessThanOrEqual(1);
   });
 
   it("decodes the text of every text beacon", () => {
