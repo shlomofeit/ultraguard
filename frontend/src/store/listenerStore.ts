@@ -196,7 +196,11 @@ export const useListenerStore = create<ListenerStore>((set, get) => ({
             payload: detection.payload,
           });
           sender?.sendEvent(
-            toEventInput(detection, startedAtMs, capture.sampleRate),
+            toEventInput(
+              { ...detection, suspicion },
+              startedAtMs,
+              capture.sampleRate,
+            ),
           );
         }
       });

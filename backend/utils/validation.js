@@ -10,6 +10,8 @@ export const EVENT_TYPES = [
   "unknown",
 ];
 
+export const SUSPICION_REASONS = ["decoded", "repeated-type", "repeated-freq"];
+
 export const AUDIO_STATES = ["running", "suspended", "closed"];
 export const DEVICE_KINDS = ["browser", "python"];
 
@@ -58,6 +60,34 @@ export const createEventSchema = z.object({
     .number("sampleRate must be a number")
     .int("sampleRate must be a whole number")
     .positive("sampleRate must be positive"),
+});
+
+const MAX_FRAME_FREQS = 64;
+
+export const eventFeaturesSchema = z.object({
+  meanEntropy: z
+    .number("meanEntropy must be a number")
+    .min(0, "meanEntropy must be at least 0")
+    .max(1, "meanEntropy must be at most 1"),
+  isStable: z.boolean("isStable must be true or false"),
+  isSweep: z.boolean("isSweep must be true or false"),
+  mainPeaksHz: z
+    .array(freqSchema, "mainPeaksHz must be an array")
+    .max(MAX_FREQS, `mainPeaksHz must have at most ${MAX_FREQS} frequencies`),
+  meanFrameFreqs: z
+    .number("meanFrameFreqs must be a number")
+    .min(0, "meanFrameFreqs must be at least 0")
+    .max(MAX_FRAME_FREQS, `meanFrameFreqs must be at most ${MAX_FRAME_FREQS}`),
+  switchRate: z
+    .number("switchRate must be a number")
+    .min(0, "switchRate must be at least 0")
+    .max(1, "switchRate must be at most 1"),
+  decodedType: z
+    .enum(EVENT_TYPES, "decodedType is not a known event type")
+    .nullable(),
+  suspicion: z
+    .enum(SUSPICION_REASONS, "suspicion is not a known reason")
+    .nullable(),
 });
 
 export const heartbeatSchema = z.object({

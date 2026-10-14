@@ -7,6 +7,7 @@ import {
 } from "../utils/socketEvents.js";
 import { alertsService, ALERT_GRACE_MS } from "../services/alerts.service.js";
 import { eventsService } from "../services/events.service.js";
+import { eventFeaturesService } from "../services/eventFeatures.service.js";
 import { devicesService } from "../services/devices.service.js";
 import { presenceService } from "../services/presence.service.js";
 import { roomsService } from "../services/rooms.service.js";
@@ -20,6 +21,14 @@ export async function disconnectDevice(io, deviceId) {
     if (socket.data.device.id === deviceId) {
       socket.disconnect(true);
     }
+  }
+}
+
+async function saveFeatures(event, features) {
+  try {
+    await eventFeaturesService.saveFeatures(event, features);
+  } catch (error) {
+    console.error(error);
   }
 }
 
@@ -101,6 +110,10 @@ export function registerListenerSocket(io) {
           io.of("/live").to(`room:${event.roomId}`).emit(LIVE_EVENT, event);
         }
         ack({ success: true });
+
+        if (event) {
+          await saveFeatures(event, data.features);
+        }
       } catch (error) {
         ack({ success: false, message: error.message });
       }
